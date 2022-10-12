@@ -7,8 +7,8 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/router/middleware"
 )
 
-// RouterGroup is an interface that should be implemented by all groups that are added to the router.
-type RouterGroup interface {
+// Controller should be implemented by all controllers in order to register their routes with the gin engine
+type Controller interface {
 
 	// Routes allows the group to register its routes with the router
 	Routes(e *gin.Engine)
@@ -18,7 +18,7 @@ type RouterGroup interface {
 type Router struct {
 	Engine *gin.Engine
 
-	groups []RouterGroup
+	controllers []Controller
 }
 
 func NewRouter() *Router {
@@ -27,9 +27,9 @@ func NewRouter() *Router {
 	}
 }
 
-// AddGroup adds a RouterGroup to the router which will be registered when Routes is called
-func (r *Router) AddGroup(group RouterGroup) {
-	r.groups = append(r.groups, group)
+// Use adds a controller to the router which will be registered when Routes is called
+func (r *Router) Use(controller Controller) {
+	r.controllers = append(r.controllers, controller)
 }
 
 // Run starts the server on the given port
@@ -42,7 +42,7 @@ func (r *Router) Run(port string) {
 // Routes runs the Routes function for each group that has been registered
 func (r *Router) Routes() {
 	r.Middleware()
-	for _, group := range r.groups {
+	for _, group := range r.controllers {
 		group.Routes(r.Engine)
 	}
 }
