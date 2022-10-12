@@ -27,8 +27,8 @@ func NewRouter() *Router {
 	}
 }
 
-// Use adds a controller to the router which will be registered when Routes is called
-func (r *Router) Use(controller Controller) {
+// UseController adds a controller to the router which will be registered when Routes is called
+func (r *Router) UseController(controller Controller) {
 	r.controllers = append(r.controllers, controller)
 }
 

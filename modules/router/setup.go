@@ -10,8 +10,8 @@ func Run(
 ) {
 	router := NewRouter()
 
-	router.Use(wasm.NewController())
-	router.Use(file_server.NewController())
+	router.UseController(wasm.NewController())
+	router.UseController(file_server.NewController())
 
 	router.Routes()
 
