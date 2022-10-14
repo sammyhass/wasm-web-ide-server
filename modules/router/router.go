@@ -9,27 +9,27 @@ import (
 
 // Controller should be implemented by all controllers in order to register their routes with the gin engine
 type Controller interface {
-
-	// Routes allows the group to register its routes with the router
-	Routes(e *gin.Engine)
+	// Routes can be used to register routes for a given controller
+	Routes(e *gin.RouterGroup)
 }
 
 // Router is a wrapper around the gin.Engine that allows for the registration of RouterGroup
 type Router struct {
 	Engine *gin.Engine
 
-	controllers []Controller
+	controllers map[string]Controller
 }
 
 func NewRouter() *Router {
 	return &Router{
-		Engine: gin.Default(),
+		Engine:      gin.Default(),
+		controllers: make(map[string]Controller),
 	}
 }
 
 // UseController adds a controller to the router which will be registered when Routes is called
-func (r *Router) UseController(controller Controller) {
-	r.controllers = append(r.controllers, controller)
+func (r *Router) UseController(name string, controller Controller) {
+	r.controllers[name] = controller
 }
 
 // Run starts the server on the given port
@@ -42,8 +42,10 @@ func (r *Router) Run(port string) {
 // Routes runs the Routes function for each group that has been registered
 func (r *Router) Routes() {
 	r.Middleware()
-	for _, group := range r.controllers {
-		group.Routes(r.Engine)
+
+	for name, controller := range r.controllers {
+		group := r.Engine.Group(name)
+		controller.Routes(group)
 	}
 }
 

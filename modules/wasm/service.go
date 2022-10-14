@@ -21,11 +21,6 @@ Compile takes a string of Go code and compiles it to web assembly using tinygo, 
 */
 func (ws *WasmService) Compile(code string) (string, error) {
 
-	// Ensure the directory we want to save to actually exists
-	if _, err := os.Stat(file_server.STATIC_DIR); os.IsNotExist(err) {
-		os.Mkdir(file_server.STATIC_DIR, 0755)
-	}
-
 	tmpFile, err := os.CreateTemp("", "wasm-*.go")
 	if err != nil {
 		return "", err
@@ -38,7 +33,7 @@ func (ws *WasmService) Compile(code string) (string, error) {
 
 	uniqueId := uuid.New().String()
 	osPath := fmt.Sprintf("%s/%s.wasm", file_server.STATIC_DIR, uniqueId)
-	routePath := fmt.Sprintf("%s/%s.wasm", file_server.STATIC_ROUTE, uniqueId)
+	routePath := fmt.Sprintf("%s/%s.wasm", file_server.CONTROLLER_ROUTE, uniqueId)
 
 	cmd := exec.Command("tinygo", "build", "-o", osPath, "-target", "wasm", tmpFile.Name())
 

@@ -2,6 +2,10 @@ package wasm
 
 import "github.com/gin-gonic/gin"
 
+const (
+	CONTROLLER_ROUTE string = "/wasm"
+)
+
 type WasmController struct {
 	svc *WasmService
 }
@@ -15,8 +19,8 @@ func NewController() *WasmController {
 
 }
 
-func (wc *WasmController) Routes(e *gin.Engine) {
-	e.POST("/wasm/compile", wc.compile)
+func (wc *WasmController) Routes(e *gin.RouterGroup) {
+	e.POST("compile", wc.compile)
 }
 
 type compileDTO struct {
