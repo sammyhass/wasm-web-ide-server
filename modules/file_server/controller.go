@@ -1,6 +1,10 @@
 package file_server
 
-import "github.com/gin-gonic/gin"
+import (
+	"os"
+
+	"github.com/gin-gonic/gin"
+)
 
 const (
 	/*
@@ -21,5 +25,10 @@ func NewController() *StaticFileServerController {
 }
 
 func (ssc *StaticFileServerController) Routes(e *gin.Engine) {
+	// Ensure the directory we are serving from exists.
+	if _, err := os.Stat(STATIC_DIR); os.IsNotExist(err) {
+		os.Mkdir(STATIC_DIR, 0755)
+	}
+
 	e.Static(STATIC_ROUTE, STATIC_DIR)
 }

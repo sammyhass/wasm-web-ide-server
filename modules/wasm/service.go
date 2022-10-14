@@ -20,6 +20,12 @@ func NewService() *WasmService {
 Compile takes a string of Go code and compiles it to web assembly using tinygo, returning the route to the compiled wasm file that is served from the file server.
 */
 func (ws *WasmService) Compile(code string) (string, error) {
+
+	// Ensure the directory we want to save to actually exists
+	if _, err := os.Stat(file_server.STATIC_DIR); os.IsNotExist(err) {
+		os.Mkdir(file_server.STATIC_DIR, 0755)
+	}
+
 	tmpFile, err := os.CreateTemp("", "wasm-*.go")
 	if err != nil {
 		return "", err
