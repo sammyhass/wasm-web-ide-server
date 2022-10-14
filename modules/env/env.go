@@ -11,6 +11,12 @@ var Env Environ
 
 type Environ struct {
 	PORT string
+
+	POSTGRES_HOST     string
+	POSTGRES_PORT     string
+	POSTGRES_USER     string
+	POSTGRES_PASSWORD string
+	POSTGRES_DB       string
 }
 
 func InitEnv() error {
@@ -20,6 +26,12 @@ func InitEnv() error {
 
 	input := Environ{
 		PORT: os.Getenv("PORT"),
+
+		POSTGRES_HOST:     os.Getenv("POSTGRES_HOST"),
+		POSTGRES_PORT:     os.Getenv("POSTGRES_PORT"),
+		POSTGRES_USER:     os.Getenv("POSTGRES_USER"),
+		POSTGRES_PASSWORD: os.Getenv("POSTGRES_PASSWORD"),
+		POSTGRES_DB:       os.Getenv("POSTGRES_DB"),
 	}
 
 	if input.PORT == "" {
