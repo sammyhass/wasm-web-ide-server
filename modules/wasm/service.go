@@ -1,6 +1,8 @@
 package wasm
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -37,8 +39,12 @@ func (ws *WasmService) Compile(code string) (string, error) {
 
 	cmd := exec.Command("tinygo", "build", "-o", osPath, "-target", "wasm", tmpFile.Name())
 
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
 	if err := cmd.Run(); err != nil {
-		return "", err
+		fmt.Println(fmt.Sprint(err) + ":" + stderr.String())
+		return "", errors.New(stderr.String())
 	}
 
 	return routePath, nil

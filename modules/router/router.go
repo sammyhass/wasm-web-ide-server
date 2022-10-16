@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -27,8 +29,12 @@ func NewRouter() *Router {
 	}
 }
 
-// UseController adds a controller to the router which will be registered when Routes is called
+// UseController register a controller with the router
 func (r *Router) UseController(name string, controller Controller) {
+	if _, ok := r.controllers[name]; ok {
+		log.Fatalf("controller %s already registered", name)
+	}
+
 	r.controllers[name] = controller
 }
 
