@@ -1,10 +1,6 @@
 package auth
 
 import (
-	"errors"
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sammyhass/web-ide/server/modules/user"
 )
@@ -27,7 +23,7 @@ func NewController() *AuthController {
 func (ac *AuthController) Routes(e *gin.RouterGroup) {
 	e.POST("/login", ac.login)
 	e.POST("/register", ac.register)
-	e.GET("/me", ac.me)
+	e.GET("/me", Protected(ac.me))
 }
 
 type loginDto struct {
@@ -79,31 +75,14 @@ func (ac *AuthController) register(c *gin.Context) {
 
 }
 
-func (ac *AuthController) me(c *gin.Context) {
-	bearerHeader := c.GetHeader("Authorization")
-	if bearerHeader == "" {
-		c.Error(errors.New("no authorization header provided"))
-		return
-	}
-
-	tok := strings.Replace(bearerHeader, "Bearer ", "", 1)
-
-	claims, err := VerifyJWT(tok)
+func (ac *AuthController) me(c *gin.Context, uuid string) {
+	user, err := ac.svc.userRepo.FindById(uuid)
 
 	if err != nil {
-		c.AbortWithError(http.StatusUnauthorized, err)
+		c.Error(err)
 		return
 	}
 
-	if user_id, ok := claims["user_id"].(string); ok {
-		user, err := ac.svc.userRepo.FindById(user_id)
-
-		if err != nil {
-			c.Error(err)
-			return
-		}
-
-		c.JSON(200, user.View())
-	}
+	c.JSON(200, user.View())
 
 }

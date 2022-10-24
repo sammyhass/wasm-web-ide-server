@@ -19,9 +19,9 @@ func NewController() *ProjectsController {
 func (c *ProjectsController) Routes(
 	group *gin.RouterGroup,
 ) {
-	group.POST("/", c.createProject)
-	group.GET("/:id", c.getProject)
-	group.GET("/", c.getProjects)
+	group.POST("/", auth.Protected(c.createProject))
+	group.GET("/:id", auth.Protected(c.getProject))
+	group.GET("/", auth.Protected(c.getProjects))
 }
 
 type newProjectDto struct {
@@ -31,9 +31,8 @@ type newProjectDto struct {
 
 func (c *ProjectsController) createProject(
 	ctx *gin.Context,
+	uuid string,
 ) {
-	uuid := auth.GetUserFromContextOrAbort(ctx)
-
 	var dto newProjectDto
 
 	if err := ctx.ShouldBindJSON(&dto); err != nil {
@@ -53,11 +52,9 @@ func (c *ProjectsController) createProject(
 
 func (c *ProjectsController) getProjects(
 	ctx *gin.Context,
+	uuid string,
 ) {
-	uuid := auth.GetUserFromContextOrAbort(ctx)
-
 	projects, err := c.service.GetProjectsByUserID(uuid)
-
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -73,9 +70,8 @@ func (c *ProjectsController) getProjects(
 
 func (c *ProjectsController) getProject(
 	ctx *gin.Context,
+	uuid string,
 ) {
-	uuid := auth.GetUserFromContextOrAbort(ctx)
-
 	project, err := c.service.GetProjectByID(ctx.Param("id"))
 	if err != nil {
 		ctx.Error(err)

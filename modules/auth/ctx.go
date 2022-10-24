@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"net/http"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,23 +10,25 @@ func SetUserToContext(ctx *gin.Context, userID string) {
 	ctx.Set("user_id", userID)
 }
 
-func GetUserFromContext(ctx *gin.Context) string {
+func GetUserFromContext(ctx *gin.Context) (string, error) {
 	userID, ok := ctx.Get("user_id")
 
 	if !ok {
-		return ""
+		return "", fmt.Errorf("not authenticated")
 	}
 
-	return userID.(string)
+	return userID.(string), nil
 }
 
-func GetUserFromContextOrAbort(ctx *gin.Context) string {
-	userID, ok := ctx.Get("user_id")
+func Protected(handler func(ctx *gin.Context, userID string)) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		userID, err := GetUserFromContext(ctx)
 
-	if !ok {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return ""
+		if err != nil {
+			ctx.AbortWithStatus(401)
+			return
+		}
+
+		handler(ctx, userID)
 	}
-
-	return userID.(string)
 }
