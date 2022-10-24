@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +14,14 @@ type User struct {
 	Projects []Project
 }
 
-func NewID() string {
-	return uuid.New().String()
+type UserView struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+}
+
+func (u *User) View() UserView {
+	return UserView{
+		ID:       u.ID,
+		Username: u.Username,
+	}
 }

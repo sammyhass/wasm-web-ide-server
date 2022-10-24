@@ -20,8 +20,8 @@ func NewService(
 	}
 }
 
-func (as *AuthService) generateJWTFomUser(u *model.User) (string, error) {
-	return GenerateJWTFromClaims(map[string]interface{}{
+func (as *AuthService) generateJWTFomUser(u model.User) (string, error) {
+	return generateJWTFromClaims(map[string]interface{}{
 		"user_id": u.ID,
 	})
 }
@@ -40,7 +40,7 @@ func (as *AuthService) Login(username string, password string) (model.User, stri
 		return model.User{}, "", errors.New("username or password is incorrect")
 	}
 
-	token, err := as.generateJWTFomUser(&found)
+	token, err := as.generateJWTFomUser(found)
 	if err != nil {
 		return model.User{}, "", err
 	}
@@ -71,7 +71,7 @@ func (as *AuthService) Register(username string, password string) (model.User, s
 		return model.User{}, "", err
 	}
 
-	jwt, err := as.generateJWTFomUser(&u)
+	jwt, err := as.generateJWTFomUser(u)
 
 	if err != nil {
 		return model.User{}, "", err

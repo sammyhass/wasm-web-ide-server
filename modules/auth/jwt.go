@@ -8,7 +8,7 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/env"
 )
 
-func GenerateJWTFromClaims(
+func generateJWTFromClaims(
 	claims map[string]interface{},
 ) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(claims))

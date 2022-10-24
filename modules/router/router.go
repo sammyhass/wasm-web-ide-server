@@ -58,13 +58,7 @@ func (r *Router) Routes() {
 // Middleware should be used to register all middleware for the router
 func (r Router) Middleware() {
 	r.Engine.Use(
-		cors.New(
-			cors.Config{
-				AllowOrigins: []string{"http://localho.st:3000"},
-				AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-				AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
-			},
-		),
+		cors.Default(),
 	)
 
 	r.Engine.Use(
@@ -78,4 +72,5 @@ func (r Router) Middleware() {
 		},
 	)
 	r.Engine.Use(middleware.ErrorHandler)
+	r.Engine.Use(middleware.AuthMiddleware)
 }

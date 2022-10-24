@@ -51,7 +51,7 @@ func (ac *AuthController) login(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"user":  user,
+		"user":  user.View(),
 		"token": jwt,
 	})
 
@@ -73,7 +73,7 @@ func (ac *AuthController) register(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"user":  user,
+		"user":  user.View(),
 		"token": jwt,
 	})
 
@@ -103,10 +103,7 @@ func (ac *AuthController) me(c *gin.Context) {
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"user": user,
-		})
-
+		c.JSON(200, user.View())
 	}
 
 }
