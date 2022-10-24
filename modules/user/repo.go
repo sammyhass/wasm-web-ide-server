@@ -2,8 +2,8 @@ package user
 
 import (
 	"github.com/google/uuid"
-	"github.com/sammyhass/web-ide/server/modules/crypto"
 	"github.com/sammyhass/web-ide/server/modules/db"
+	"github.com/sammyhass/web-ide/server/modules/model"
 	"gorm.io/gorm"
 )
 
@@ -19,26 +19,21 @@ func NewRepository() *UserRepository {
 
 type CreateUserDto struct {
 	Username string `json:"username"`
-	Password string `json:"password"`
+	Password string `json:"password"` // accepts the hashed password
 }
 
-func (ur *UserRepository) Create(userDto CreateUserDto) (User, error) {
-	hashedPassword, err := crypto.HashPassword(userDto.Password)
+func (ur *UserRepository) Create(userDto CreateUserDto) (model.User, error) {
 
-	if err != nil {
-		return User{}, err
-	}
-
-	newUser := User{
+	newUser := model.User{
 		ID:       uuid.New().String(),
 		Username: userDto.Username,
-		Password: hashedPassword,
+		Password: userDto.Password,
 	}
 
 	res := ur.db.Create(&newUser)
 
 	if res.Error != nil {
-		return User{}, res.Error
+		return model.User{}, res.Error
 	}
 
 	return newUser, nil
@@ -46,13 +41,13 @@ func (ur *UserRepository) Create(userDto CreateUserDto) (User, error) {
 
 func (ur *UserRepository) FindById(
 	id string,
-) (User, error) {
-	var user User
+) (model.User, error) {
+	var user model.User
 
-	res := ur.db.First(&user, id)
+	res := ur.db.Where("id = ?", id).First(&user)
 
 	if res.Error != nil {
-		return User{}, res.Error
+		return model.User{}, res.Error
 	}
 
 	return user, nil
@@ -60,13 +55,13 @@ func (ur *UserRepository) FindById(
 
 func (ur *UserRepository) FindByUsername(
 	username string,
-) (User, error) {
-	var user User
+) (model.User, error) {
+	var user model.User
 
 	res := ur.db.Where("username = ?", username).First(&user)
 
 	if res.Error != nil {
-		return User{}, res.Error
+		return model.User{}, res.Error
 	}
 
 	return user, nil

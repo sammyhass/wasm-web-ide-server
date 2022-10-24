@@ -3,8 +3,9 @@ package auth
 import (
 	"errors"
 
-	"github.com/sammyhass/web-ide/server/modules/crypto"
+	"github.com/sammyhass/web-ide/server/modules/model"
 	"github.com/sammyhass/web-ide/server/modules/user"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -19,50 +20,63 @@ func NewService(
 	}
 }
 
-func (as *AuthService) Login(username string, password string) (user.User, error) {
+func (as *AuthService) generateJWTFomUser(u *model.User) (string, error) {
+	return GenerateJWTFromClaims(map[string]interface{}{
+		"user_id": u.ID,
+	})
+}
+
+func (as *AuthService) Login(username string, password string) (model.User, string, error) {
 	found, err := as.userRepo.FindByUsername(username)
 
 	if err != nil {
-		return user.User{}, err
+		return model.User{}, "", errors.New("username or password is incorrect")
 	}
 
-	if ok := crypto.Compare(found.Password, password); !ok {
-		return user.User{}, errors.New("login failed, check your credentials")
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(found.Password),
+		[]byte(password),
+	); err != nil {
+		return model.User{}, "", errors.New("username or password is incorrect")
 	}
 
-	return found, nil
+	token, err := as.generateJWTFomUser(&found)
+	if err != nil {
+		return model.User{}, "", err
+	}
+
+	return found, token, nil
 }
 
 // Register creates a new user with the given username and password and returns the created user
-func (as *AuthService) Register(username string, password string) (user.User, error) {
+func (as *AuthService) Register(username string, password string) (model.User, string, error) {
 
 	_, err := as.userRepo.FindByUsername(username)
 
 	if err == nil {
-		return user.User{}, errors.New("username already exists")
+		return model.User{}, "", errors.New("username already exists")
 	}
 
-	hashedPassword, err := crypto.HashPassword(password)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return user.User{}, err
-	}
-
-	newUser := user.User{
-		ID:       user.NewID(),
-		Username: username,
-		Password: hashedPassword,
+		return model.User{}, "", err
 	}
 
 	u, err := as.userRepo.Create(user.CreateUserDto{
-		Username: newUser.Username,
-		Password: newUser.Password,
+		Username: username,
+		Password: string(hashedPassword),
 	})
-
 	if err != nil {
-		return user.User{}, err
+		return model.User{}, "", err
 	}
 
-	return u, nil
+	jwt, err := as.generateJWTFomUser(&u)
+
+	if err != nil {
+		return model.User{}, "", err
+	}
+
+	return u, jwt, nil
 
 }
