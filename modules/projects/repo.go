@@ -2,7 +2,6 @@ package projects
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/sammyhass/web-ide/server/modules/db"
 	"github.com/sammyhass/web-ide/server/modules/model"
@@ -83,7 +82,6 @@ func (r *ProjectsRepository) GetProjectByID(userId string, id string) (model.Pro
 	}
 
 	files, err := r.s3.GetFiles(project.UserID, project.ID)
-	fmt.Println(files)
 
 	if err != nil {
 		return model.ProjectView{}, err

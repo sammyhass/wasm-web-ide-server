@@ -1,8 +1,6 @@
 package projects
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sammyhass/web-ide/server/modules/auth"
 )
@@ -76,6 +74,5 @@ func (c *ProjectsController) getProject(
 		return
 	}
 
-	fmt.Println(project)
 	ctx.JSON(200, project)
 }
