@@ -5,11 +5,13 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/env"
 	"github.com/sammyhass/web-ide/server/modules/model"
 	"github.com/sammyhass/web-ide/server/modules/router"
+	"github.com/sammyhass/web-ide/server/modules/s3"
 )
 
 func main() {
 	env.InitEnv()
 	db.Connect()
+	s3.InitSession()
 
 	model.Migrate()
 

@@ -31,17 +31,3 @@ func AuthMiddleware(
 	ctx.Next()
 
 }
-
-func Protected(handler func(ctx *gin.Context)) func(ctx *gin.Context) {
-	return func(ctx *gin.Context) {
-		_, err := auth.GetUserFromContext(ctx)
-
-		if err != nil {
-			ctx.AbortWithStatus(401)
-			return
-		}
-
-		handler(ctx)
-
-	}
-}

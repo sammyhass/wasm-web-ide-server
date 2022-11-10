@@ -45,7 +45,7 @@ func (r *Router) Run(port string) {
 	)
 }
 
-// Routes runs the Routes function for each group that has been registered
+// Routes runs the Routes function for each controller with a router group
 func (r *Router) Routes() {
 	r.Middleware()
 
@@ -58,19 +58,15 @@ func (r *Router) Routes() {
 // Middleware should be used to register all middleware for the router
 func (r Router) Middleware() {
 	r.Engine.Use(
-		cors.Default(),
+		cors.New(
+			cors.Config{
+				AllowOrigins: []string{"http://localho.st:3000"},
+				AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+				AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+			},
+		),
 	)
 
-	r.Engine.Use(
-		func(ctx *gin.Context) {
-			if ctx.Request.Method == "OPTIONS" {
-				ctx.AbortWithStatus(200)
-				return
-			}
-
-			ctx.Next()
-		},
-	)
 	r.Engine.Use(middleware.ErrorHandler)
 	r.Engine.Use(middleware.AuthMiddleware)
 }

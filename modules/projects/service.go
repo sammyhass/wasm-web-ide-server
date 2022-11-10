@@ -1,6 +1,8 @@
 package projects
 
-import "github.com/sammyhass/web-ide/server/modules/model"
+import (
+	"github.com/sammyhass/web-ide/server/modules/model"
+)
 
 type ProjectsService struct {
 	repo *ProjectsRepository
@@ -16,14 +18,20 @@ func (s *ProjectsService) CreateProject(
 	name string,
 	description string,
 	userID string,
-) (model.Project, error) {
-	return s.repo.CreateProject(name, description, userID)
+) (model.ProjectView, error) {
+	// Create project in db
+	pv, err := s.repo.CreateProject(name, description, userID)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	return pv, nil
 }
 
-func (s *ProjectsService) GetProjectsByUserID(userID string) ([]*model.Project, error) {
+func (s *ProjectsService) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	return s.repo.GetProjectsByUserID(userID)
 }
 
-func (s *ProjectsService) GetProjectByID(id string) (*model.Project, error) {
-	return s.repo.GetProjectByID(id)
+func (s *ProjectsService) GetProjectByID(userId, id string) (model.ProjectView, error) {
+	return s.repo.GetProjectByID(userId, id)
 }
