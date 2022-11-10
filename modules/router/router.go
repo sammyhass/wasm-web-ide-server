@@ -60,7 +60,7 @@ func (r Router) Middleware() {
 	r.Engine.Use(
 		cors.New(
 			cors.Config{
-				AllowOrigins: []string{"http://localho.st:3000"},
+				AllowOrigins: []string{"http://localho.st:3000", "https://wasm-web-ide-client.vercel.app"},
 				AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 				AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 			},
