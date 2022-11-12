@@ -123,7 +123,7 @@ func TestProjectsService_CreateProject_S3_Error(t *testing.T) {
 	repoMock := &repoMock{}
 	s3Error := errors.New("Couldn't create project in S3")
 	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(model.ProjectView{}, nil)
-	repoMock.On("CreateProjectInS3", mock.Anything).Return(model.ProjectFiles{}, s3Error)
+	repoMock.On("CreateProjectFiles", mock.Anything).Return(model.ProjectFiles{}, s3Error)
 
 	s := &ProjectsService{
 		repo: repoMock,
