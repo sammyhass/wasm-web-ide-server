@@ -46,7 +46,7 @@ func (r *repoMock) GetProjectsByUserID(userId string) ([]model.ProjectView, erro
 	}, args.Error(1)
 }
 
-func (r *repoMock) CreateProjectInS3(project model.Project) (model.ProjectFiles, error) {
+func (r *repoMock) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	args := r.Called(project)
 	return model.DefaultFiles, args.Error(1)
 }
@@ -79,7 +79,7 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 	}
 
 	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(fakeProject, nil)
-	repoMock.On("CreateProjectInS3", fakeProject).Return(model.DefaultFiles, nil)
+	repoMock.On("CreateProjectFiles", fakeProject).Return(model.DefaultFiles, nil)
 
 	pv, err := s.CreateProject(projName, projDesc, projUserId)
 
