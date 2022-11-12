@@ -9,12 +9,11 @@ import (
 type Project struct {
 	*gorm.Model
 	ID          string `gorm:"primaryKey" json:"id"`
+	CreatedAt   time.Time
 	Name        string
 	Description string
 
-	UserID string
-
-	WasmBinPath string
+	UserID string `gorm:"index"`
 }
 
 type ProjectView struct {
@@ -23,7 +22,6 @@ type ProjectView struct {
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	UserID      string     `json:"user_id"`
-	WasmBinPath string     `json:"wasm_path"`
 	Files       []FileView `json:"files"`
 }
 
@@ -34,19 +32,19 @@ func (p *Project) View() ProjectView {
 		Name:        p.Name,
 		UserID:      p.UserID,
 		Description: p.Description,
-		WasmBinPath: p.WasmBinPath,
 	}
 }
 
-func (p *Project) ViewWithFiles(files []FileView) ProjectView {
+func (p *Project) ViewWithFiles(
+	files ProjectFiles,
+) ProjectView {
 	return ProjectView{
 		ID:          p.ID,
 		CreatedAt:   p.CreatedAt,
 		Name:        p.Name,
 		UserID:      p.UserID,
 		Description: p.Description,
-		WasmBinPath: p.WasmBinPath,
-		Files:       files,
+		Files:       ProjectFilesToFileViews(files),
 	}
 }
 

@@ -1,16 +1,21 @@
 package projects
 
 import (
+	"errors"
+
 	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/modules/wasm"
 )
 
 type ProjectsService struct {
-	repo *ProjectsRepository
+	repo        projectsRepo
+	wasmService *wasm.WasmService
 }
 
 func NewProjectsService() *ProjectsService {
 	return &ProjectsService{
-		repo: NewProjectsRepository(),
+		repo:        NewProjectsRepository(),
+		wasmService: wasm.NewWasmService(),
 	}
 }
 
@@ -19,13 +24,17 @@ func (s *ProjectsService) CreateProject(
 	description string,
 	userID string,
 ) (model.ProjectView, error) {
-	// Create project in db
-	pv, err := s.repo.CreateProject(name, description, userID)
+	proj, err := s.repo.CreateProject(name, description, userID)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
 
-	return pv, nil
+	files, err := s.repo.CreateProjectFiles(proj)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	return proj.ViewWithFiles(files), nil
 }
 
 func (s *ProjectsService) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
@@ -34,4 +43,49 @@ func (s *ProjectsService) GetProjectsByUserID(userID string) ([]model.ProjectVie
 
 func (s *ProjectsService) GetProjectByID(userId, id string) (model.ProjectView, error) {
 	return s.repo.GetProjectByID(userId, id)
+}
+
+func (s *ProjectsService) DeleteProjectByID(userId, id string) error {
+	dbErr := s.repo.DeleteProject(userId, id)
+	if dbErr != nil {
+		return dbErr
+	}
+
+	s3Err := s.repo.DeleteProjectFiles(userId, id)
+	if s3Err != nil {
+		return s3Err
+	}
+
+	return nil
+}
+
+func (s *ProjectsService) CompileProjectWASM(
+	userId string,
+	projectId string,
+) (string, error) {
+
+	proj, err := s.repo.GetProjectByID(userId, projectId)
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range proj.Files {
+		if file.Name == "main.go" {
+			return s.wasmService.Compile(file.Content)
+		}
+	}
+
+	return "", errors.New("main.go not found")
+}
+
+func (s *ProjectsService) UpdateProjectFiles(
+	userId string,
+	projectId string,
+	files model.ProjectFiles,
+) (
+	model.ProjectFiles,
+	error,
+) {
+	return s.repo.UpdateProjectFiles(userId, projectId, files)
 }

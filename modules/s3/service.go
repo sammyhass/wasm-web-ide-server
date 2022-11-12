@@ -66,9 +66,9 @@ func (s *S3Service) UploadFile(
 }
 
 /*
-UploadFiles uploads a map of files to s3. It uses a wait group to wait for all the files to be uploaded.
+UploadProjectFiles uploads a map of files to s3. It uses a wait group to wait for all the files to be uploaded.
 */
-func (svc *S3Service) UploadFiles(
+func (svc *S3Service) UploadProjectFiles(
 	userId, projectId string,
 	files map[string]string,
 ) (map[string]string, error) {
@@ -105,9 +105,9 @@ func (svc *S3Service) UploadFiles(
 }
 
 /*
-GetFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
+GetProjectFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
 */
-func (svc *S3Service) GetFiles(userId, projectId string) (model.ProjectFiles, error) {
+func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
 	out, err := svc.s3.ListObjects(
 		&s3.ListObjectsInput{
 			Bucket: aws.String(env.Env.S3_BUCKET),
@@ -170,4 +170,49 @@ func (svc *S3Service) GetFile(path string) (string, error) {
 	}
 
 	return string(buf.Bytes()), nil
+}
+
+func (svc *S3Service) DeleteFile(userId, projectId, fileName string) error {
+	_, err := svc.s3.DeleteObject(
+		&s3.DeleteObjectInput{
+			Bucket: aws.String(env.Env.S3_BUCKET),
+			Key: aws.String(
+				fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
+			),
+		},
+	)
+
+	return err
+}
+
+/*
+*
+
+	DeleteProjectFiles deletes all the files in a project in s3.
+*/
+func (svc *S3Service) DeleteProjectFiles(userId, projectId string) error {
+
+	wg := sync.WaitGroup{}
+	errs := make(chan error, len(model.DefaultFiles))
+	wg.Add(len(model.DefaultFiles))
+
+	for fname := range model.DefaultFiles {
+		go func(fileName string) {
+			defer wg.Done()
+			err := svc.DeleteFile(userId, projectId, fileName)
+			if err != nil {
+				errs <- err
+			}
+		}(fname)
+	}
+
+	wg.Wait()
+
+	close(errs)
+
+	for err := range errs {
+		return err
+	}
+
+	return nil
 }

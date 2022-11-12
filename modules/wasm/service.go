@@ -14,7 +14,7 @@ import (
 type WasmService struct {
 }
 
-func NewService() *WasmService {
+func NewWasmService() *WasmService {
 	return &WasmService{}
 }
 

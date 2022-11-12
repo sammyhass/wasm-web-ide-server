@@ -10,7 +10,10 @@ import (
 
 func main() {
 	env.InitEnv()
+
 	db.Connect()
+	defer db.Close()
+
 	s3.InitSession()
 
 	model.Migrate()
