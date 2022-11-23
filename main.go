@@ -18,5 +18,5 @@ func main() {
 
 	model.Migrate()
 
-	router.Run(env.Env.PORT)
+	router.Run(env.Get(env.PORT))
 }

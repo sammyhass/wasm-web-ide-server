@@ -5,9 +5,6 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/user"
 )
 
-const SESSION_STORE_NAME = "session"
-const SESSION_USER_ID_KEY = "user_id"
-
 type AuthController struct {
 	svc *AuthService
 }
@@ -27,7 +24,7 @@ func (ac *AuthController) Routes(e *gin.RouterGroup) {
 }
 
 type loginDto struct {
-	Username string `json:"username"`
+	Email    string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -39,16 +36,18 @@ func (ac *AuthController) login(c *gin.Context) {
 		return
 	}
 
-	user, jwt, err := ac.svc.Login(dto.Username, dto.Password)
+	user, jwt, err := ac.svc.Login(dto)
 
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
+	SetUserToContext(c, jwt)
+
 	c.JSON(200, gin.H{
-		"user":  user.View(),
-		"token": jwt,
+		"user": user.View(),
+		"jwt":  jwt,
 	})
 
 }
@@ -61,16 +60,18 @@ func (ac *AuthController) register(c *gin.Context) {
 		return
 	}
 
-	user, jwt, err := ac.svc.Register(dto.Username, dto.Password)
+	user, jwt, err := ac.svc.Register(dto)
 
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
+	SetUserToContext(c, jwt)
+
 	c.JSON(200, gin.H{
-		"user":  user.View(),
-		"token": jwt,
+		"user": user.View(),
+		"jwt":  jwt,
 	})
 
 }

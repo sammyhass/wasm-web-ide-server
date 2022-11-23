@@ -8,20 +8,20 @@ type User struct {
 	*gorm.Model
 	ID string `gorm:"primaryKey"`
 
-	Username string `gorm:"uniqueIndex"`
+	Email    string `gorm:"uniqueIndex"`
 	Password string
 
 	Projects []Project
 }
 
 type UserView struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
+	ID    string `json:"id"`
+	Email string `json:"username"`
 }
 
 func (u *User) View() UserView {
 	return UserView{
-		ID:       u.ID,
-		Username: u.Username,
+		ID:    u.ID,
+		Email: u.Email,
 	}
 }

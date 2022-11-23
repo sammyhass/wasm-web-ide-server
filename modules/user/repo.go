@@ -18,7 +18,7 @@ func NewRepository() *UserRepository {
 }
 
 type CreateUserDto struct {
-	Username string `json:"username"`
+	Email    string `json:"username"`
 	Password string `json:"password"` // accepts the hashed password
 }
 
@@ -26,7 +26,7 @@ func (ur *UserRepository) Create(userDto CreateUserDto) (model.User, error) {
 
 	newUser := model.User{
 		ID:       uuid.New().String(),
-		Username: userDto.Username,
+		Email:    userDto.Email,
 		Password: userDto.Password,
 	}
 
@@ -53,12 +53,12 @@ func (ur *UserRepository) FindById(
 	return user, nil
 }
 
-func (ur *UserRepository) FindByUsername(
-	username string,
+func (ur *UserRepository) FindByEmail(
+	email string,
 ) (model.User, error) {
 	var user model.User
 
-	res := ur.db.Where("username = ?", username).First(&user)
+	res := ur.db.Where("email = ?", email).First(&user)
 
 	if res.Error != nil {
 		return model.User{}, res.Error

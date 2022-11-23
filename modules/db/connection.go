@@ -16,11 +16,11 @@ func Connect() {
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s",
-		env.Env.POSTGRES_HOST,
-		env.Env.POSTGRES_USER,
-		env.Env.POSTGRES_PASSWORD,
-		env.Env.POSTGRES_DB,
-		env.Env.POSTGRES_PORT,
+		env.Get(env.POSTGRES_HOST),
+		env.Get(env.POSTGRES_USER),
+		env.Get(env.POSTGRES_PASSWORD),
+		env.Get(env.POSTGRES_DB),
+		env.Get(env.POSTGRES_PORT),
 	)
 
 	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

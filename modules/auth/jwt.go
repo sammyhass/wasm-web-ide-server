@@ -14,7 +14,7 @@ func generateJWTFromClaims(
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(claims))
 
 	return token.SignedString([]byte(
-		env.Env.JWT_SECRET,
+		env.Get(env.JWT_SECRET),
 	))
 }
 
@@ -26,7 +26,7 @@ func VerifyJWT(
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(env.Env.JWT_SECRET), nil
+		return []byte(env.Get(env.JWT_SECRET)), nil
 	})
 
 	if err != nil {

@@ -8,6 +8,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const JWT_CLAIM_USER_ID = "user_id"
+
 type AuthService struct {
 	userRepo *user.UserRepository
 }
@@ -22,12 +24,12 @@ func NewService(
 
 func (as *AuthService) generateJWTFomUser(u model.User) (string, error) {
 	return generateJWTFromClaims(map[string]interface{}{
-		"user_id": u.ID,
+		JWT_CLAIM_USER_ID: u.ID,
 	})
 }
 
-func (as *AuthService) Login(username string, password string) (model.User, string, error) {
-	found, err := as.userRepo.FindByUsername(username)
+func (as *AuthService) Login(dto loginDto) (model.User, string, error) {
+	found, err := as.userRepo.FindByEmail(dto.Email)
 
 	if err != nil {
 		return model.User{}, "", errors.New("username or password is incorrect")
@@ -35,7 +37,7 @@ func (as *AuthService) Login(username string, password string) (model.User, stri
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(found.Password),
-		[]byte(password),
+		[]byte(dto.Password),
 	); err != nil {
 		return model.User{}, "", errors.New("username or password is incorrect")
 	}
@@ -48,23 +50,23 @@ func (as *AuthService) Login(username string, password string) (model.User, stri
 	return found, token, nil
 }
 
-// Register creates a new user with the given username and password and returns the created user
-func (as *AuthService) Register(username string, password string) (model.User, string, error) {
+// Register creates a new user
+func (as *AuthService) Register(registerDto loginDto) (model.User, string, error) {
 
-	_, err := as.userRepo.FindByUsername(username)
+	_, err := as.userRepo.FindByEmail(registerDto.Email)
 
 	if err == nil {
 		return model.User{}, "", errors.New("username already exists")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerDto.Password), bcrypt.DefaultCost)
 
 	if err != nil {
 		return model.User{}, "", err
 	}
 
 	u, err := as.userRepo.Create(user.CreateUserDto{
-		Username: username,
+		Email:    registerDto.Email,
 		Password: string(hashedPassword),
 	})
 	if err != nil {

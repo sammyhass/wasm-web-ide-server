@@ -1,59 +1,98 @@
 package env
 
 import (
+	"log"
 	"os"
+	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
 
-var Env Environ
+var env map[EnvKey]string
 
-type Environ struct {
-	PORT string
+/*
+Get a key from the environment
+*/
+func Get(key EnvKey) string {
+	val, ok := env[key]
+	if !ok {
+		return ""
+	}
 
-	POSTGRES_HOST     string
-	POSTGRES_PORT     string
-	POSTGRES_USER     string
-	POSTGRES_PASSWORD string
-	POSTGRES_DB       string
+	return val
 
-	JWT_SECRET string
-
-	S3_ACCESS_KEY_ID     string
-	S3_SECRET_ACCESS_KEY string
-	S3_BUCKET            string
 }
 
 func InitEnv() error {
-	validator := validator.New()
 
 	godotenv.Load()
 
-	input := Environ{
-		PORT: os.Getenv("PORT"),
+	input := make(map[EnvKey]string)
 
-		POSTGRES_HOST:        os.Getenv("POSTGRES_HOST"),
-		POSTGRES_PORT:        os.Getenv("POSTGRES_PORT"),
-		POSTGRES_USER:        os.Getenv("POSTGRES_USER"),
-		POSTGRES_PASSWORD:    os.Getenv("POSTGRES_PASSWORD"),
-		POSTGRES_DB:          os.Getenv("POSTGRES_DB"),
-		JWT_SECRET:           os.Getenv("JWT_SECRET"),
-		S3_ACCESS_KEY_ID:     os.Getenv("S3_ACCESS_KEY_ID"),
-		S3_SECRET_ACCESS_KEY: os.Getenv("S3_SECRET_ACCESS_KEY"),
-		S3_BUCKET:            "wasm-ide-bucket",
+	for key := env_none + 1; key < env_none_final; key++ {
+		envVar := os.Getenv(key.String())
+		isOpt := strings.HasPrefix(key.String(), "OPT_")
+
+		if envVar == "" && !isOpt {
+			log.Fatalf("Missing required key %s", key.String())
+		} else if envVar != "" {
+			input[key] = envVar
+		}
 	}
 
-	if input.PORT == "" {
-		input.PORT = "8080"
-	}
-
-	err := validator.Struct(input)
-
-	if err != nil {
-		return err
-	}
-
-	Env = input
+	env = input
 	return nil
+}
+
+type EnvKey int
+
+const (
+	env_none EnvKey = iota
+	// START OF ENV KEYS
+
+	PORT
+	POSTGRES_HOST
+	POSTGRES_PORT
+	POSTGRES_USER
+	POSTGRES_PASSWORD
+	POSTGRES_DB
+
+	JWT_SECRET
+	COOKIE_SECRET
+
+	S3_ACCESS_KEY_ID
+	S3_SECRET_ACCESS_KEY
+	S3_BUCKET
+
+	// END OF ENV KEYS - final used for loading in everything
+	env_none_final
+)
+
+func (e EnvKey) String() string {
+	switch e {
+	case PORT:
+		return "PORT"
+	case POSTGRES_HOST:
+		return "POSTGRES_HOST"
+	case POSTGRES_PORT:
+		return "POSTGRES_PORT"
+	case POSTGRES_USER:
+		return "POSTGRES_USER"
+	case POSTGRES_PASSWORD:
+		return "POSTGRES_PASSWORD"
+	case POSTGRES_DB:
+		return "POSTGRES_DB"
+	case JWT_SECRET:
+		return "JWT_SECRET"
+	case COOKIE_SECRET:
+		return "COOKIE_SECRET"
+	case S3_ACCESS_KEY_ID:
+		return "S3_ACCESS_KEY_ID"
+	case S3_SECRET_ACCESS_KEY:
+		return "S3_SECRET_ACCESS_KEY"
+	case S3_BUCKET:
+		return "S3_BUCKET"
+	default:
+		return "INVALID_KEY"
+	}
 }

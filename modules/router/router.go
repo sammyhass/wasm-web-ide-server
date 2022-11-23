@@ -69,4 +69,5 @@ func (r Router) Middleware() {
 
 	r.Engine.Use(middleware.ErrorHandler)
 	r.Engine.Use(middleware.AuthMiddleware)
+	r.Engine.Use()
 }

@@ -21,8 +21,8 @@ func InitSession() {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-west-2"),
 		Credentials: credentials.NewStaticCredentials(
-			env.Env.S3_ACCESS_KEY_ID,
-			env.Env.S3_SECRET_ACCESS_KEY,
+			env.Get(env.S3_ACCESS_KEY_ID),
+			env.Get(env.S3_SECRET_ACCESS_KEY),
 			"",
 		),
 	})
@@ -51,7 +51,7 @@ func (s *S3Service) UploadFile(
 ) (string, error) {
 
 	res, err := s.uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(env.Env.S3_BUCKET),
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
 		Key: aws.String(
 			fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
 		),
@@ -110,7 +110,7 @@ GetProjectFiles gets a map of files contained in a project on s3. First it gets 
 func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
 	out, err := svc.s3.ListObjects(
 		&s3.ListObjectsInput{
-			Bucket: aws.String(env.Env.S3_BUCKET),
+			Bucket: aws.String(env.Get(env.S3_BUCKET)),
 			Prefix: aws.String(fmt.Sprintf("%s/%s", userId, projectId)),
 		},
 	)
@@ -161,7 +161,7 @@ func (svc *S3Service) GetFile(path string) (string, error) {
 	buf := aws.NewWriteAtBuffer([]byte{})
 
 	_, err := downloader.Download(buf, &s3.GetObjectInput{
-		Bucket: aws.String(env.Env.S3_BUCKET),
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
 		Key:    aws.String(path),
 	})
 
@@ -175,7 +175,7 @@ func (svc *S3Service) GetFile(path string) (string, error) {
 func (svc *S3Service) DeleteFile(userId, projectId, fileName string) error {
 	_, err := svc.s3.DeleteObject(
 		&s3.DeleteObjectInput{
-			Bucket: aws.String(env.Env.S3_BUCKET),
+			Bucket: aws.String(env.Get(env.S3_BUCKET)),
 			Key: aws.String(
 				fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
 			),
