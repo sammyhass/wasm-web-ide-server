@@ -14,12 +14,11 @@ var env map[EnvKey]string
 Get a key from the environment
 */
 func Get(key EnvKey) string {
-	val, ok := env[key]
-	if !ok {
-		return ""
+	if val, ok := env[key]; ok {
+		return val
 	}
 
-	return val
+	return ""
 
 }
 
@@ -49,21 +48,25 @@ type EnvKey int
 const (
 	env_none EnvKey = iota
 	// START OF ENV KEYS
+	// -----------------
 
 	PORT
+
+	// DB
 	POSTGRES_HOST
 	POSTGRES_PORT
 	POSTGRES_USER
 	POSTGRES_PASSWORD
 	POSTGRES_DB
 
-	JWT_SECRET
-	COOKIE_SECRET
-
+	// S3
 	S3_ACCESS_KEY_ID
 	S3_SECRET_ACCESS_KEY
 	S3_BUCKET
 
+	JWT_SECRET
+
+	// --------------------
 	// END OF ENV KEYS - final used for loading in everything
 	env_none_final
 )
@@ -84,8 +87,6 @@ func (e EnvKey) String() string {
 		return "POSTGRES_DB"
 	case JWT_SECRET:
 		return "JWT_SECRET"
-	case COOKIE_SECRET:
-		return "COOKIE_SECRET"
 	case S3_ACCESS_KEY_ID:
 		return "S3_ACCESS_KEY_ID"
 	case S3_SECRET_ACCESS_KEY:

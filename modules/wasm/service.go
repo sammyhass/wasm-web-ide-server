@@ -11,8 +11,7 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/file_server"
 )
 
-type WasmService struct {
-}
+type WasmService struct{}
 
 func NewWasmService() *WasmService {
 	return &WasmService{}
