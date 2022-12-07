@@ -23,9 +23,7 @@ func NewService(
 }
 
 func (as *AuthService) generateJWTFomUser(u model.User) (string, error) {
-	return generateJWTFromClaims(map[string]interface{}{
-		JWT_CLAIM_USER_ID: u.ID,
-	})
+	return generateJWTFromUser(u.ID)
 }
 
 func (as *AuthService) Login(dto loginDto) (model.User, string, error) {

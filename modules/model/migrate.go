@@ -1,6 +1,8 @@
 package model
 
 import (
+	"log"
+
 	"github.com/sammyhass/web-ide/server/modules/db"
 )
 
@@ -8,5 +10,7 @@ import (
 func Migrate() {
 	conn := db.GetConnection()
 
-	conn.AutoMigrate(&User{}, &Project{})
+	if err := conn.AutoMigrate(&User{}, &Project{}); err != nil {
+		log.Fatalf("Migration Failed: %v", err)
+	}
 }

@@ -43,7 +43,7 @@ func (ac *AuthController) login(c *gin.Context) {
 		return
 	}
 
-	SetUserToContext(c, jwt)
+	SetUserToContext(c, user.ID)
 
 	c.JSON(200, gin.H{
 		"user": user.View(),
@@ -67,7 +67,7 @@ func (ac *AuthController) register(c *gin.Context) {
 		return
 	}
 
-	SetUserToContext(c, jwt)
+	SetUserToContext(c, user.ID)
 
 	c.JSON(200, gin.H{
 		"user": user.View(),

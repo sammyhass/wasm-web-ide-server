@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -19,13 +20,17 @@ func AuthMiddleware(
 	}
 
 	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+	fmt.Println(tokenString)
 
 	claims, err := auth.VerifyJWT(tokenString)
 
 	if err != nil {
+		fmt.Println(err)
 		ctx.Next()
 		return
 	}
+
+	fmt.Println(claims)
 
 	auth.SetUserToContext(ctx, claims["user_id"].(string))
 	ctx.Next()
