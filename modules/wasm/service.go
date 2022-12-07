@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sammyhass/web-ide/server/modules/file_server"
@@ -41,9 +42,23 @@ func (ws *WasmService) Compile(code string) (string, error) {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
+	errs := []string{}
+
 	if err := cmd.Run(); err != nil {
-		fmt.Println(fmt.Sprint(err) + ":" + stderr.String())
-		return "", errors.New(stderr.String())
+		for _, line := range strings.Split(stderr.String(), "\n") {
+
+			hasFileName := strings.Contains(line, tmpFile.Name())
+			if hasFileName {
+				trimTill := strings.Index(line, tmpFile.Name())
+				line = line[trimTill:]
+				line = strings.ReplaceAll(line, tmpFile.Name(), "main.go")
+				errs = append(errs, line)
+			}
+		}
+
+		if len(errs) > 0 {
+			return "", errors.New(strings.Join(errs, "\n"))
+		}
 	}
 
 	return routePath, nil

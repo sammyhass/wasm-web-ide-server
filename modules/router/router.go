@@ -33,6 +33,7 @@ func NewRouter() *Router {
 func (r *Router) UseController(name string, controller Controller) {
 	if _, ok := r.controllers[name]; ok {
 		log.Fatalf("controller %s already registered", name)
+
 	}
 
 	r.controllers[name] = controller
@@ -56,19 +57,25 @@ func (r *Router) Routes() {
 }
 
 // Middleware should be used to register all middleware for the router
-func (r Router) Middleware() {
+func (r *Router) Middleware() {
+	r.useCORS()
+
+	r.Engine.Use(middleware.ErrorHandler)
+	r.Engine.Use(middleware.AuthMiddleware)
+}
+
+func (r *Router) useCORS() {
+	allowedHeaders := []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
+		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent"}
+
 	r.Engine.Use(
 		cors.New(
 			cors.Config{
 				AllowOrigins:     []string{"http://localho.st:3000", "https://wasm-web-ide-client.vercel.app"},
 				AllowCredentials: true,
-				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-				AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
-					"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User"},
+				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+				AllowHeaders:     allowedHeaders,
 			},
 		),
 	)
-
-	r.Engine.Use(middleware.ErrorHandler)
-	r.Engine.Use(middleware.AuthMiddleware)
 }
