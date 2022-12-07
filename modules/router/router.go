@@ -63,7 +63,8 @@ func (r Router) Middleware() {
 				AllowOrigins:     []string{"http://localho.st:3000", "https://wasm-web-ide-client.vercel.app"},
 				AllowCredentials: true,
 				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-				AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+				AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
+					"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User"},
 			},
 		),
 	)
