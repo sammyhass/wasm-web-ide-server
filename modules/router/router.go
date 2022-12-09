@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"github.com/sammyhass/web-ide/server/modules/env"
 	"github.com/sammyhass/web-ide/server/modules/router/middleware"
 )
 
@@ -66,12 +67,12 @@ func (r *Router) Middleware() {
 
 func (r *Router) useCORS() {
 	allowedHeaders := []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
-		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent"}
+		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent", "Pragma"}
 
 	r.Engine.Use(
 		cors.New(
 			cors.Config{
-				AllowOrigins:     []string{"http://localho.st:3000", "https://wasm-web-ide-client.vercel.app"},
+				AllowOrigins:     []string{env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")},
 				AllowCredentials: true,
 				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 				AllowHeaders:     allowedHeaders,

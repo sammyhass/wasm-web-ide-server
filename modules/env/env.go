@@ -19,7 +19,14 @@ func Get(key EnvKey) string {
 	}
 
 	return ""
+}
 
+func GetOr(key EnvKey, fallback string) string {
+	if val, ok := env[key]; ok {
+		return val
+	}
+
+	return fallback
 }
 
 func InitEnv() error {
@@ -66,8 +73,10 @@ const (
 
 	JWT_SECRET
 
+	CORS_ALLOW_ORIGIN
+
 	// --------------------
-	// END OF ENV KEYS - final used for loading in everything
+	// END OF ENV KEYS
 	env_none_final
 )
 
@@ -93,6 +102,8 @@ func (e EnvKey) String() string {
 		return "S3_SECRET_ACCESS_KEY"
 	case S3_BUCKET:
 		return "S3_BUCKET"
+	case CORS_ALLOW_ORIGIN:
+		return "CORS_ALLOW_ORIGIN"
 	default:
 		return "INVALID_KEY"
 	}
