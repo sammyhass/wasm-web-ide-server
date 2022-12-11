@@ -108,38 +108,22 @@ func (svc *S3Service) UploadProjectFiles(
 GetProjectFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
 */
 func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
-	out, err := svc.s3.ListObjects(
-		&s3.ListObjectsInput{
-			Bucket: aws.String(env.Get(env.S3_BUCKET)),
-			Prefix: aws.String(fmt.Sprintf("%s/%s", userId, projectId)),
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
 	files := make(model.ProjectFiles)
 
 	wg := sync.WaitGroup{}
-	errs := make(chan error, len(out.Contents))
+	errs := make(chan error, len(model.DefaultFiles))
 
-	wg.Add(len(out.Contents))
-	for _, obj := range out.Contents {
-		go func(obj *s3.Object) {
+	wg.Add(len(model.DefaultFiles))
+	for fname := range model.DefaultFiles {
+		go func(fname string) {
 			defer wg.Done()
-
-			fileName := strings.Split(*obj.Key, "/")[2]
-
-			content, err := svc.GetFile(*obj.Key)
-
+			file, err := svc.GetFile(fmt.Sprintf("%s/%s/%s", userId, projectId, fname))
 			if err != nil {
 				errs <- err
 			}
 
-			files[fileName] = content
-
-		}(obj)
+			files[fname] = file
+		}(fname)
 	}
 
 	wg.Wait()
