@@ -30,5 +30,5 @@ func (ssc *StaticFileServerController) Routes(e *gin.RouterGroup) {
 		os.Mkdir(STATIC_DIR, 0755)
 	}
 
-	e.Static("/", STATIC_DIR)
+	e.Static("", STATIC_DIR)
 }

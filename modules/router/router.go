@@ -23,9 +23,16 @@ type Router struct {
 	controllers map[string]Controller
 }
 
+func newEngine() *gin.Engine {
+	eng := gin.Default()
+	eng.RedirectTrailingSlash = false
+
+	return eng
+}
+
 func NewRouter() *Router {
 	return &Router{
-		Engine:      gin.Default(),
+		Engine:      newEngine(),
 		controllers: make(map[string]Controller),
 	}
 }

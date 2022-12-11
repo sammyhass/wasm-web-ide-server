@@ -19,8 +19,8 @@ func NewController() *ProjectsController {
 func (c *ProjectsController) Routes(
 	group *gin.RouterGroup,
 ) {
-	group.GET("/", auth.Protected(c.getProjects))
-	group.POST("/", auth.Protected(c.createProject))
+	group.GET("", auth.Protected(c.getProjects))
+	group.POST("", auth.Protected(c.createProject))
 
 	group.GET("/:id", auth.Protected(c.getProject))
 	group.DELETE("/:id", auth.Protected(c.deleteProject))
