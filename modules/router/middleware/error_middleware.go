@@ -12,14 +12,15 @@ func ErrorHandler(c *gin.Context) {
 
 	msgs := []string{}
 	for _, err := range c.Errors {
+
 		fmt.Println("Error: ", err.Error())
 		msgs = append(msgs, err.Error())
 	}
 
-	if len(msgs) > 0 {
+	// check if already written
+	if !c.Writer.Written() {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Internal Server Error",
-			"info":  msgs,
+			"error": msgs,
 		})
 	}
 }
