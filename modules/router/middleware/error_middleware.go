@@ -16,7 +16,6 @@ func ErrorHandler(c *gin.Context) {
 		msgs = append(msgs, err.Error())
 	}
 
-	// check if already written
 	if !c.Writer.Written() {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Internal Server Error",
