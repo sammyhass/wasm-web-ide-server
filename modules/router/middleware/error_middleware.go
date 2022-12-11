@@ -12,7 +12,6 @@ func ErrorHandler(c *gin.Context) {
 
 	msgs := []string{}
 	for _, err := range c.Errors {
-
 		fmt.Println("Error: ", err.Error())
 		msgs = append(msgs, err.Error())
 	}

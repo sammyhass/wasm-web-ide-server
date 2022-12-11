@@ -26,6 +26,7 @@ type Router struct {
 func newEngine() *gin.Engine {
 	eng := gin.Default()
 	eng.RedirectTrailingSlash = false
+	eng.RedirectFixedPath = false
 
 	return eng
 }

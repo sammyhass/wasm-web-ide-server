@@ -20,12 +20,10 @@ func AuthMiddleware(
 	}
 
 	tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
-	fmt.Println(tokenString)
 
 	claims, err := auth.VerifyJWT(tokenString)
 
 	if err != nil {
-		fmt.Println(err)
 		ctx.Next()
 		return
 	}
