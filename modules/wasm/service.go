@@ -59,6 +59,11 @@ func (ws *WasmService) Compile(code string) (string, error) {
 		if len(errs) > 0 {
 			return "", errors.New(strings.Join(errs, "\n"))
 		}
+
+		if err != nil {
+			return "", fmt.Errorf("%v", stderr.String())
+		}
+
 	}
 
 	return routePath, nil

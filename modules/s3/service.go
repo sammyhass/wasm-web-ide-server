@@ -111,6 +111,8 @@ func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFi
 	files := make(model.ProjectFiles)
 
 	wg := sync.WaitGroup{}
+	mutex := &sync.Mutex{}
+
 	errs := make(chan error, len(model.DefaultFiles))
 
 	wg.Add(len(model.DefaultFiles))
@@ -122,7 +124,10 @@ func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFi
 				errs <- err
 			}
 
+			mutex.Lock()
 			files[fname] = file
+			mutex.Unlock()
+
 		}(fname)
 	}
 
