@@ -139,6 +139,8 @@ func (r *ProjectsRepository) DeleteProject(userId string, id string) error {
 		return errors.New("project not found")
 	}
 
+	go r.DeleteProjectFiles(userId, id)
+
 	dbErr := r.db.Delete(&project).Error
 	if dbErr != nil {
 		return dbErr

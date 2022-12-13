@@ -1,6 +1,8 @@
 package s3
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -70,72 +72,46 @@ UploadProjectFiles uploads a map of files to s3. It uses a wait group to wait fo
 */
 func (svc *S3Service) UploadProjectFiles(
 	userId, projectId string,
-	files map[string]string,
-) (map[string]string, error) {
-	wg := sync.WaitGroup{}
+	files model.ProjectFiles,
+) (model.ProjectFiles, error) {
 
-	wg.Add(len(files))
+	json, err := serializeProjectFiles(files)
 
-	res := make(map[string]string)
-
-	errs := make(chan error, len(files))
-
-	for fileName, content := range files {
-		go func(fileName, content string) {
-			defer wg.Done()
-
-			location, err := svc.UploadFile(userId, projectId, fileName, content)
-			if err != nil {
-				errs <- err
-			}
-
-			res[fileName] = location
-		}(fileName, content)
-	}
-
-	wg.Wait()
-
-	close(errs)
-
-	for err := range errs {
+	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	_, err = svc.uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
+		Key: aws.String(
+			fmt.Sprintf("%s/%s/%s", userId, projectId, "project.json"),
+		),
+		Body: bytes.NewReader(json),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 /*
 GetProjectFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
 */
 func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
-	files := make(model.ProjectFiles)
 
-	wg := sync.WaitGroup{}
-	mutex := &sync.Mutex{}
+	json, err := svc.GetFile(fmt.Sprintf("%s/%s/%s", userId, projectId, "project.json"))
 
-	errs := make(chan error, len(model.DefaultFiles))
-
-	wg.Add(len(model.DefaultFiles))
-	for fname := range model.DefaultFiles {
-		go func(fname string) {
-			defer wg.Done()
-			file, err := svc.GetFile(fmt.Sprintf("%s/%s/%s", userId, projectId, fname))
-			if err != nil {
-				errs <- err
-			}
-
-			mutex.Lock()
-			files[fname] = file
-			mutex.Unlock()
-
-		}(fname)
+	if err != nil {
+		return nil, err
 	}
 
-	wg.Wait()
+	files, err := deserializeProjectFiles(
+		[]byte(json),
+	)
 
-	close(errs)
-
-	for err := range errs {
+	if err != nil {
 		return nil, err
 	}
 
@@ -204,4 +180,23 @@ func (svc *S3Service) DeleteProjectFiles(userId, projectId string) error {
 	}
 
 	return nil
+}
+
+func serializeProjectFiles(files model.ProjectFiles) (json.RawMessage, error) {
+	data, err := json.Marshal(files)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize project files: %w", err)
+	}
+
+	return data, nil
+}
+
+func deserializeProjectFiles(data []byte) (model.ProjectFiles, error) {
+	var files model.ProjectFiles
+	err := json.Unmarshal(data, &files)
+	if err != nil {
+		return model.ProjectFiles{}, err
+	}
+
+	return files, nil
 }
