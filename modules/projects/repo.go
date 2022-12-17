@@ -12,7 +12,6 @@ import (
 type projectsRepo interface {
 	CreateProject(
 		name string,
-		description string,
 		userID string,
 	) (model.Project, error)
 
@@ -44,13 +43,11 @@ CreateProject creates a new project in the database
 */
 func (r *ProjectsRepository) CreateProject(
 	name string,
-	description string,
 	userID string,
 ) (model.Project, error) {
 
 	proj := model.NewProject(
 		name,
-		description,
 		userID,
 	)
 
@@ -68,10 +65,6 @@ CreateProjectInS3 creates a new project in S3 for a given project stored in the 
 */
 func (r *ProjectsRepository) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	_, err := r.s3.UploadProjectFiles(project.UserID, project.ID, model.DefaultFiles)
-	if err != nil {
-		return nil, err
-	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +120,7 @@ func (r *ProjectsRepository) GetProjectByID(userId string, id string) (model.Pro
 DeleteProjectDB deletes a project from the database
 */
 func (r *ProjectsRepository) DeleteProject(userId string, id string) error {
+
 	var project model.Project
 
 	err := r.db.Where("id = ?", id).First(&project).Error
@@ -138,8 +132,6 @@ func (r *ProjectsRepository) DeleteProject(userId string, id string) error {
 	if project.UserID != userId {
 		return errors.New("project not found")
 	}
-
-	go r.DeleteProjectFiles(userId, id)
 
 	dbErr := r.db.Delete(&project).Error
 	if dbErr != nil {

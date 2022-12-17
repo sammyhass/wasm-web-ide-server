@@ -30,8 +30,7 @@ func (c *ProjectsController) Routes(
 }
 
 type newProjectDto struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name string `json:"name"`
 }
 
 func (c *ProjectsController) createProject(
@@ -45,7 +44,7 @@ func (c *ProjectsController) createProject(
 		return
 	}
 
-	proj, err := c.service.CreateProject(dto.Name, dto.Description, uuid)
+	proj, err := c.service.CreateProject(dto.Name, uuid)
 
 	if err != nil {
 		ctx.Error(err)
@@ -90,8 +89,7 @@ func (c *ProjectsController) deleteProject(
 		ctx.Error(err)
 		return
 	}
-
-	ctx.Status(200)
+	ctx.JSON(200, gin.H{})
 
 }
 

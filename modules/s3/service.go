@@ -156,27 +156,29 @@ func (svc *S3Service) DeleteFile(userId, projectId, fileName string) error {
 	DeleteProjectFiles deletes all the files in a project in s3.
 */
 func (svc *S3Service) DeleteProjectFiles(userId, projectId string) error {
+	errs := make(chan error)
+	files := []string{"project.json", "main.wasm"}
 
-	wg := sync.WaitGroup{}
-	errs := make(chan error, len(model.DefaultFiles))
-	wg.Add(len(model.DefaultFiles))
+	var wg sync.WaitGroup
+	wg.Add(len(files))
 
-	for fname := range model.DefaultFiles {
-		go func(fileName string) {
+	for _, file := range files {
+		go func(file string) {
 			defer wg.Done()
-			err := svc.DeleteFile(userId, projectId, fileName)
-			if err != nil {
-				errs <- err
-			}
-		}(fname)
+			errs <- svc.DeleteFile(userId, projectId, file)
+		}(file)
 	}
 
-	wg.Wait()
-
-	close(errs)
+	go func() {
+		wg.Wait()
+		close(errs)
+	}()
 
 	for err := range errs {
-		return err
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
 	}
 
 	return nil

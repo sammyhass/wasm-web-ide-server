@@ -23,18 +23,17 @@ const (
 )
 
 var fakeProject = model.Project{
-	ID:          "1",
-	Name:        projName,
-	Description: projDesc,
-	UserID:      projUserId,
+	ID:     "1",
+	Name:   projName,
+	UserID: projUserId,
 	Model: &gorm.Model{
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	},
 }
 
-func (r *repoMock) CreateProject(name, description, userID string) (model.Project, error) {
-	args := r.Called(name, description, userID)
+func (r *repoMock) CreateProject(name, userID string) (model.Project, error) {
+	args := r.Called(name, userID)
 	return fakeProject, args.Error(1)
 }
 
@@ -81,7 +80,7 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(fakeProject, nil)
 	repoMock.On("CreateProjectFiles", fakeProject).Return(model.DefaultFiles, nil)
 
-	pv, err := s.CreateProject(projName, projDesc, projUserId)
+	pv, err := s.CreateProject(projName, projUserId)
 
 	if err != nil {
 		t.Error(err)
@@ -89,10 +88,6 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 
 	if pv.Name != projName {
 		t.Error("Expected project name to be", projName)
-	}
-
-	if pv.Description != projDesc {
-		t.Error("Expected project description to be", projDesc)
 	}
 
 	if pv.UserID != projUserId {
@@ -104,13 +99,13 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 func TestProjectsService_CreateProject_DB_Error(t *testing.T) {
 	repoMock := &repoMock{}
 	dbErr := errors.New("Couldn't create project in DB")
-	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(model.Project{}, dbErr)
+	repoMock.On("CreateProject", projName, projUserId).Return(model.Project{}, dbErr)
 
 	s := &ProjectsService{
 		repo: repoMock,
 	}
 
-	_, err := s.CreateProject("projectName", "test", "user_id")
+	_, err := s.CreateProject("projectName", "user_id")
 
 	if err != dbErr {
 		t.Error("Expected error to be returned")
@@ -122,14 +117,14 @@ func TestProjectsService_CreateProject_DB_Error(t *testing.T) {
 func TestProjectsService_CreateProject_S3_Error(t *testing.T) {
 	repoMock := &repoMock{}
 	s3Error := errors.New("Couldn't create project in S3")
-	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(model.ProjectView{}, nil)
+	repoMock.On("CreateProject", projName, projUserId).Return(model.ProjectView{}, nil)
 	repoMock.On("CreateProjectFiles", mock.Anything).Return(model.ProjectFiles{}, s3Error)
 
 	s := &ProjectsService{
 		repo: repoMock,
 	}
 
-	_, err := s.CreateProject("projectName", "test", "user_id")
+	_, err := s.CreateProject("projectName", "user_id")
 
 	if err != s3Error {
 		t.Error("Expected s3 error to be returned")
@@ -154,10 +149,6 @@ func TestProjectsService_GetProjectsByUserID_Success(t *testing.T) {
 
 	if pv[0].Name != "projectName" {
 		t.Error("Expected project name to be projectName")
-	}
-
-	if pv[0].Description != "test" {
-		t.Error("Expected project description to be test")
 	}
 
 	if pv[0].UserID != "user_id" {

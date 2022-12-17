@@ -21,10 +21,9 @@ func NewProjectsService() *ProjectsService {
 
 func (s *ProjectsService) CreateProject(
 	name string,
-	description string,
 	userID string,
 ) (model.ProjectView, error) {
-	proj, err := s.repo.CreateProject(name, description, userID)
+	proj, err := s.repo.CreateProject(name, userID)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
@@ -46,14 +45,14 @@ func (s *ProjectsService) GetProjectByID(userId, id string) (model.ProjectView, 
 }
 
 func (s *ProjectsService) DeleteProjectByID(userId, id string) error {
-	dbErr := s.repo.DeleteProject(userId, id)
-	if dbErr != nil {
-		return dbErr
+	err := s.repo.DeleteProject(userId, id)
+	if err != nil {
+		return err
 	}
 
-	s3Err := s.repo.DeleteProjectFiles(userId, id)
-	if s3Err != nil {
-		return s3Err
+	err = s.repo.DeleteProjectFiles(userId, id)
+	if err != nil {
+		return err
 	}
 
 	return nil
