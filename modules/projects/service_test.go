@@ -18,7 +18,6 @@ type repoMock struct {
 const (
 	// ProjectName is the name of the project
 	projName   = "projectName"
-	projDesc   = "test"
 	projUserId = "user_id"
 )
 
@@ -77,7 +76,7 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 		repo: repoMock,
 	}
 
-	repoMock.On("CreateProject", projName, projDesc, projUserId).Return(fakeProject, nil)
+	repoMock.On("CreateProject", projName, projUserId).Return(fakeProject, nil)
 	repoMock.On("CreateProjectFiles", fakeProject).Return(model.DefaultFiles, nil)
 
 	pv, err := s.CreateProject(projName, projUserId)
