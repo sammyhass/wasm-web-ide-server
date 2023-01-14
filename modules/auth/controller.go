@@ -24,7 +24,7 @@ func (ac *AuthController) Routes(e *gin.RouterGroup) {
 }
 
 type loginDto struct {
-	Email    string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 

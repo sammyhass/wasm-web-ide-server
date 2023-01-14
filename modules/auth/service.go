@@ -26,18 +26,23 @@ func (as *AuthService) generateJWTFomUser(u model.User) (string, error) {
 	return generateJWTFromUser(u.ID)
 }
 
+var (
+	errIncorrectEmailOrPassword = errors.New("email or password is incorrect")
+	errUserAlreadyExists        = errors.New("email already in use")
+)
+
 func (as *AuthService) Login(dto loginDto) (model.User, string, error) {
 	found, err := as.userRepo.FindByEmail(dto.Email)
 
 	if err != nil {
-		return model.User{}, "", errors.New("username or password is incorrect")
+		return model.User{}, "", errIncorrectEmailOrPassword
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(found.Password),
 		[]byte(dto.Password),
 	); err != nil {
-		return model.User{}, "", errors.New("username or password is incorrect")
+		return model.User{}, "", errIncorrectEmailOrPassword
 	}
 
 	token, err := as.generateJWTFomUser(found)
@@ -54,7 +59,7 @@ func (as *AuthService) Register(registerDto loginDto) (model.User, string, error
 	_, err := as.userRepo.FindByEmail(registerDto.Email)
 
 	if err == nil {
-		return model.User{}, "", errors.New("username already exists")
+		return model.User{}, "", errUserAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerDto.Password), bcrypt.DefaultCost)

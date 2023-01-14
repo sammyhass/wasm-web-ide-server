@@ -16,7 +16,7 @@ func ErrorHandler(c *gin.Context) {
 		msgs = append(msgs, err.Error())
 	}
 
-	if !c.Writer.Written() {
+	if !c.Writer.Written() && len(msgs) > 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Internal Server Error",
 			"info":  msgs,

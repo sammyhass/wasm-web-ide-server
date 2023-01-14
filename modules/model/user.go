@@ -16,7 +16,7 @@ type User struct {
 
 type UserView struct {
 	ID    string `json:"id"`
-	Email string `json:"username"`
+	Email string `json:"email"`
 }
 
 func (u *User) View() UserView {
