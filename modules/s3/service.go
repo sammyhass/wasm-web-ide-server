@@ -96,14 +96,38 @@ func (svc *Service) GetProjectFiles(userId, projectId string) (model.ProjectFile
 
 	files := make(model.ProjectFiles)
 
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	var errs []error
+
+	wg.Add(len(res.Contents))
+
 	for _, obj := range res.Contents {
-		key := strings.Split(*obj.Key, "/")[2]
-		fmt.Printf("%v / %s", key, *obj.Key)
-		file, err := svc.GetFile(*obj.Key)
-		if err != nil {
-			return nil, err
-		}
-		files[key] = file
+		go func(obj *s3.Object) {
+			defer wg.Done()
+
+			fileName := strings.Split(*obj.Key, "/")[2]
+
+			content, err := svc.GetFile(*obj.Key)
+
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			files[fileName] = content
+
+			fmt.Printf("got file %s", fileName)
+		}(obj)
+	}
+
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return nil, errs[0]
 	}
 
 	return files, nil

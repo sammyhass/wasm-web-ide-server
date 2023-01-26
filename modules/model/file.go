@@ -1,6 +1,10 @@
 package model
 
-import "strings"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 func languageFromFileName(fileName string) string {
 	return strings.Split(fileName, ".")[1]
@@ -47,11 +51,28 @@ var DefaultCss = `h1 {
 
 var DefaultJs = `console.log("Hello World")`
 
+var goModTemplate = `module %s
+go 1.19`
+
+func DefaultGoMod(projName string) string {
+	slug := strings.TrimSpace(strings.ToLower(projName))
+	slug = strings.ReplaceAll(slug, " ", "-")
+	return fmt.Sprintf(goModTemplate, slug)
+}
+
 var DefaultFiles = ProjectFiles{
 	"main.go":    DefaultGo,
 	"index.html": DefaultHtml,
 	"styles.css": DefaultCss,
 	"app.js":     DefaultJs,
-	"go.mod":     "",
-	"main.wasm":  "",
+}
+
+func GetFileContent(files []FileView, filename string) (string, error) {
+	for _, file := range files {
+		if file.Name == filename {
+			return file.Content, nil
+		}
+	}
+
+	return "", errors.New(filename + " not found")
 }

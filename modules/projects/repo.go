@@ -61,7 +61,13 @@ func (r *Repository) CreateProject(
 }
 
 func (r *Repository) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
+	goMod := model.DefaultGoMod(project.Name)
+	files := model.DefaultFiles
+
+	files["go.mod"] = goMod
+
 	_, err := r.s3.UploadProjectFiles(project.UserID, project.ID, model.DefaultFiles)
+
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +120,7 @@ func (r *Repository) GetProjectByID(userId string, id string) (model.ProjectView
 }
 
 /*
-DeleteProjectDB deletes a project from the database
+DeleteProject deletes a project from the database
 */
 func (r *Repository) DeleteProject(userId string, id string) error {
 

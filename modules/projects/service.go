@@ -1,8 +1,6 @@
 package projects
 
 import (
-	"errors"
-
 	"github.com/sammyhass/web-ide/server/modules/model"
 	"github.com/sammyhass/web-ide/server/modules/wasm"
 )
@@ -69,13 +67,17 @@ func (s *Service) CompileProjectWASM(
 		return "", err
 	}
 
-	for _, file := range proj.Files {
-		if file.Name == "main.go" {
-			return s.wasmService.Compile(file.Content)
-		}
+	mainFile, err := model.GetFileContent(proj.Files, "main.go")
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("main.go not found")
+	modFile, err := model.GetFileContent(proj.Files, "go.mod")
+	if err != nil {
+		return "", err
+	}
+
+	return s.wasmService.Compile(mainFile, modFile)
 }
 
 func (s *Service) UpdateProjectFiles(

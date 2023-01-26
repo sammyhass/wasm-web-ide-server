@@ -18,40 +18,69 @@ func NewWasmService() *Service {
 	return &Service{}
 }
 
-/*
-Compile takes a string of Go code and compiles it to web assembly using tinygo, returning the route to the compiled wasm file that is served from the file server.
-*/
-func (ws *Service) Compile(code string) (string, error) {
+func createTempCodeDir(code string, goMod string) (string, error, func()) {
+	tmpDir, err := os.MkdirTemp("", "project-dir-*")
+	if err != nil {
+		return "", err, nil
+	}
 
-	tmpFile, err := os.CreateTemp("", "wasm-*.go")
+	deleteDir := func() {
+		os.RemoveAll(tmpDir)
+	}
+
+	codeFile, err := os.CreateTemp(tmpDir, "main.go")
+	if err != nil {
+		deleteDir()
+		return "", err, nil
+	}
+
+	if _, err := codeFile.Write([]byte(code)); err != nil {
+		deleteDir()
+		return "", err, nil
+	}
+
+	goModFile, err := os.CreateTemp(tmpDir, "go.mod")
+	if err != nil {
+		deleteDir()
+		return "", err, nil
+	}
+	if _, err := goModFile.Write([]byte(goMod)); err != nil {
+		deleteDir()
+		return "", err, nil
+	}
+
+	return tmpDir, nil, deleteDir
+}
+
+/*
+Compile takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning the route to the compiled wasm file that is served from the file server.
+*/
+func (ws *Service) Compile(code string, goMod string) (string, error) {
+
+	dir, err, delete := createTempCodeDir(code, goMod)
 	if err != nil {
 		return "", err
 	}
-	defer tmpFile.Close()
-
-	if _, err := tmpFile.Write([]byte(code)); err != nil {
-		return "", err
-	}
+	defer delete()
 
 	uniqueId := uuid.New().String()
 	osPath := fmt.Sprintf("%s/%s.wasm", file_server.STATIC_DIR, uniqueId)
 	routePath := fmt.Sprintf("%s/%s.wasm", file_server.CONTROLLER_ROUTE, uniqueId)
 
-	cmd := exec.Command("tinygo", "build", "-o", osPath, "-target", "wasm", tmpFile.Name())
+	filename := "main.go"
+
+	cmd := exec.Command("tinygo", "build", "-o", osPath, "-target", "wasm", filename)
+	cmd.Dir = dir
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	errs := []string{}
+	var errs []string
 
 	if err := cmd.Run(); err != nil {
 		for _, line := range strings.Split(stderr.String(), "\n") {
-
-			hasFileName := strings.Contains(line, tmpFile.Name())
+			hasFileName := strings.Contains(line, filename)
 			if hasFileName {
-				trimTill := strings.Index(line, tmpFile.Name())
-				line = line[trimTill:]
-				line = strings.ReplaceAll(line, tmpFile.Name(), "main.go")
 				errs = append(errs, line)
 			}
 		}
