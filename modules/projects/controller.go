@@ -6,17 +6,17 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/model"
 )
 
-type ProjectsController struct {
-	service *ProjectsService
+type Controller struct {
+	service *Service
 }
 
-func NewController() *ProjectsController {
-	return &ProjectsController{
-		service: NewProjectsService(),
+func NewController() *Controller {
+	return &Controller{
+		service: NewService(),
 	}
 }
 
-func (c *ProjectsController) Routes(
+func (c *Controller) Routes(
 	group *gin.RouterGroup,
 ) {
 	group.GET("", auth.Protected(c.getProjects))
@@ -33,7 +33,7 @@ type newProjectDto struct {
 	Name string `json:"name"`
 }
 
-func (c *ProjectsController) createProject(
+func (c *Controller) createProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -54,7 +54,7 @@ func (c *ProjectsController) createProject(
 	ctx.JSON(200, proj)
 }
 
-func (c *ProjectsController) getProjects(
+func (c *Controller) getProjects(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -67,7 +67,7 @@ func (c *ProjectsController) getProjects(
 	ctx.JSON(200, projects)
 }
 
-func (c *ProjectsController) getProject(
+func (c *Controller) getProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -80,7 +80,7 @@ func (c *ProjectsController) getProject(
 	ctx.JSON(200, project)
 }
 
-func (c *ProjectsController) deleteProject(
+func (c *Controller) deleteProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -97,7 +97,7 @@ type updateProjectFilesDto struct {
 	Files model.ProjectFiles `json:"files"`
 }
 
-func (c *ProjectsController) updateProject(
+func (c *Controller) updateProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -124,7 +124,7 @@ func (c *ProjectsController) updateProject(
 	)
 }
 
-func (c *ProjectsController) compileProjectToWasm(
+func (c *Controller) compileProjectToWasm(
 	ctx *gin.Context,
 	uuid string,
 ) {

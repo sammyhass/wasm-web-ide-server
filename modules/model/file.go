@@ -2,21 +2,12 @@ package model
 
 import "strings"
 
-type FileLanguage int
-
-const (
-	GO = iota
-	HTML
-	CSS
-	JS
-)
-
 func languageFromFileName(fileName string) string {
 	return strings.Split(fileName, ".")[1]
 }
 
 /*
-Files are represented as a map of file name to file content
+ProjectFiles are represented as a map of file name to file content
 */
 type ProjectFiles map[string]string
 
@@ -61,4 +52,6 @@ var DefaultFiles = ProjectFiles{
 	"index.html": DefaultHtml,
 	"styles.css": DefaultCss,
 	"app.js":     DefaultJs,
+	"go.mod":     "",
+	"main.wasm":  "",
 }

@@ -5,19 +5,19 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/user"
 )
 
-type AuthController struct {
-	svc *AuthService
+type Controller struct {
+	svc *Service
 }
 
-func NewController() *AuthController {
-	return &AuthController{
+func NewController() *Controller {
+	return &Controller{
 		svc: NewService(
 			user.NewRepository(),
 		),
 	}
 }
 
-func (ac *AuthController) Routes(e *gin.RouterGroup) {
+func (ac *Controller) Routes(e *gin.RouterGroup) {
 	e.POST("/login", ac.login)
 	e.POST("/register", ac.register)
 	e.GET("/me", Protected(ac.me))
@@ -28,7 +28,7 @@ type loginDto struct {
 	Password string `json:"password"`
 }
 
-func (ac *AuthController) login(c *gin.Context) {
+func (ac *Controller) login(c *gin.Context) {
 	var dto loginDto
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
@@ -52,7 +52,7 @@ func (ac *AuthController) login(c *gin.Context) {
 
 }
 
-func (ac *AuthController) register(c *gin.Context) {
+func (ac *Controller) register(c *gin.Context) {
 	var dto loginDto
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
@@ -76,7 +76,7 @@ func (ac *AuthController) register(c *gin.Context) {
 
 }
 
-func (ac *AuthController) me(c *gin.Context, uuid string) {
+func (ac *Controller) me(c *gin.Context, uuid string) {
 	user, err := ac.svc.userRepo.FindById(uuid)
 
 	if err != nil {

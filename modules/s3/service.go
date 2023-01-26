@@ -1,8 +1,6 @@
 package s3
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -36,23 +34,23 @@ func InitSession() {
 	currentSession = sess
 }
 
-type S3Service struct {
+type Service struct {
 	uploader *s3manager.Uploader
 	s3       *s3.S3
 }
 
-func NewS3Service() *S3Service {
-	return &S3Service{
+func NewS3Service() *Service {
+	return &Service{
 		uploader: s3manager.NewUploader(currentSession),
 		s3:       s3.New(currentSession),
 	}
 }
 
-func (s *S3Service) UploadFile(
+func (svc *Service) UploadFile(
 	userId, projectId, fileName, content string,
 ) (string, error) {
 
-	res, err := s.uploader.Upload(&s3manager.UploadInput{
+	res, err := svc.uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(env.Get(env.S3_BUCKET)),
 		Key: aws.String(
 			fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
@@ -70,24 +68,11 @@ func (s *S3Service) UploadFile(
 /*
 UploadProjectFiles uploads a map of files to s3. It uses a wait group to wait for all the files to be uploaded.
 */
-func (svc *S3Service) UploadProjectFiles(
+func (svc *Service) UploadProjectFiles(
 	userId, projectId string,
 	files model.ProjectFiles,
 ) (model.ProjectFiles, error) {
-
-	json, err := serializeProjectFiles(files)
-
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = svc.uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(env.Get(env.S3_BUCKET)),
-		Key: aws.String(
-			fmt.Sprintf("%s/%s/%s", userId, projectId, "project.json"),
-		),
-		Body: bytes.NewReader(json),
-	})
+	err := svc.UploadFiles(userId, projectId, files)
 
 	if err != nil {
 		return nil, err
@@ -99,27 +84,32 @@ func (svc *S3Service) UploadProjectFiles(
 /*
 GetProjectFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
 */
-func (svc *S3Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
-
-	json, err := svc.GetFile(fmt.Sprintf("%s/%s/%s", userId, projectId, "project.json"))
+func (svc *Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
+	res, err := svc.s3.ListObjects(&s3.ListObjectsInput{
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
+		Prefix: aws.String(fmt.Sprintf("%s/%s", userId, projectId)),
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := deserializeProjectFiles(
-		[]byte(json),
-	)
+	files := make(model.ProjectFiles)
 
-	if err != nil {
-		return nil, err
+	for _, obj := range res.Contents {
+		key := strings.Split(*obj.Key, "/")[2]
+		fmt.Printf("%v / %s", key, *obj.Key)
+		file, err := svc.GetFile(*obj.Key)
+		if err != nil {
+			return nil, err
+		}
+		files[key] = file
 	}
 
 	return files, nil
-
 }
 
-func (svc *S3Service) GetFile(path string) (string, error) {
+func (svc *Service) GetFile(path string) (string, error) {
 
 	downloader := s3manager.NewDownloader(currentSession)
 
@@ -137,7 +127,7 @@ func (svc *S3Service) GetFile(path string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
-func (svc *S3Service) DeleteFile(userId, projectId, fileName string) error {
+func (svc *Service) DeleteFile(userId, projectId, fileName string) error {
 	_, err := svc.s3.DeleteObject(
 		&s3.DeleteObjectInput{
 			Bucket: aws.String(env.Get(env.S3_BUCKET)),
@@ -151,21 +141,19 @@ func (svc *S3Service) DeleteFile(userId, projectId, fileName string) error {
 }
 
 /*
-*
-
-	DeleteProjectFiles deletes all the files in a project in s3.
+DeleteProjectFiles deletes all the files in a project in s3.
 */
-func (svc *S3Service) DeleteProjectFiles(userId, projectId string) error {
+func (svc *Service) DeleteProjectFiles(userId, projectId string) error {
 	errs := make(chan error)
-	files := []string{"project.json", "main.wasm"}
+	files := model.DefaultFiles
 
 	var wg sync.WaitGroup
 	wg.Add(len(files))
 
-	for _, file := range files {
+	for name, file := range files {
 		go func(file string) {
 			defer wg.Done()
-			errs <- svc.DeleteFile(userId, projectId, file)
+			errs <- svc.DeleteFile(userId, projectId, name)
 		}(file)
 	}
 
@@ -184,21 +172,33 @@ func (svc *S3Service) DeleteProjectFiles(userId, projectId string) error {
 	return nil
 }
 
-func serializeProjectFiles(files model.ProjectFiles) (json.RawMessage, error) {
-	data, err := json.Marshal(files)
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize project files: %w", err)
+func (svc *Service) UploadFiles(userId string, projectId string, files model.ProjectFiles) error {
+	var wg sync.WaitGroup
+
+	errs := make(chan error)
+
+	wg.Add(len(files))
+
+	for name, content := range files {
+		go func(name, content string) {
+			defer wg.Done()
+			_, err := svc.UploadFile(userId, projectId, name, content)
+			if err != nil {
+				errs <- err
+			}
+		}(name, content)
 	}
 
-	return data, nil
-}
+	go func() {
+		wg.Wait()
+		close(errs)
+	}()
 
-func deserializeProjectFiles(data []byte) (model.ProjectFiles, error) {
-	var files model.ProjectFiles
-	err := json.Unmarshal(data, &files)
-	if err != nil {
-		return model.ProjectFiles{}, err
+	for err := range errs {
+		if err != nil {
+			return err
+		}
 	}
 
-	return files, nil
+	return nil
 }

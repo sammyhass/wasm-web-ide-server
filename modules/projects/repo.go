@@ -26,13 +26,13 @@ type projectsRepo interface {
 	UpdateProjectFiles(userId string, id string, files model.ProjectFiles) (model.ProjectFiles, error)
 }
 
-type ProjectsRepository struct {
+type Repository struct {
 	db *gorm.DB
-	s3 *s3.S3Service
+	s3 *s3.Service
 }
 
-func NewProjectsRepository() *ProjectsRepository {
-	return &ProjectsRepository{
+func NewProjectsRepository() *Repository {
+	return &Repository{
 		db: db.GetConnection(),
 		s3: s3.NewS3Service(),
 	}
@@ -41,7 +41,7 @@ func NewProjectsRepository() *ProjectsRepository {
 /*
 CreateProject creates a new project in the database
 */
-func (r *ProjectsRepository) CreateProject(
+func (r *Repository) CreateProject(
 	name string,
 	userID string,
 ) (model.Project, error) {
@@ -60,10 +60,7 @@ func (r *ProjectsRepository) CreateProject(
 	return proj, nil
 }
 
-/*
-CreateProjectInS3 creates a new project in S3 for a given project stored in the database
-*/
-func (r *ProjectsRepository) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
+func (r *Repository) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	_, err := r.s3.UploadProjectFiles(project.UserID, project.ID, model.DefaultFiles)
 	if err != nil {
 		return nil, err
@@ -75,7 +72,7 @@ func (r *ProjectsRepository) CreateProjectFiles(project model.Project) (model.Pr
 /*
 GetProjectsByUserID returns all projects for a given user (without files)
 */
-func (r *ProjectsRepository) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
+func (r *Repository) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	var projects []*model.Project
 
 	err := r.db.Where("user_id = ?", userID).Find(&projects).Error
@@ -94,7 +91,7 @@ func (r *ProjectsRepository) GetProjectsByUserID(userID string) ([]model.Project
 /*
 GetProjectByID returns a project for a given user with the given id returning the database record and the files in s3
 */
-func (r *ProjectsRepository) GetProjectByID(userId string, id string) (model.ProjectView, error) {
+func (r *Repository) GetProjectByID(userId string, id string) (model.ProjectView, error) {
 	var project model.Project
 
 	err := r.db.Where("id = ?", id).First(&project).Error
@@ -119,7 +116,7 @@ func (r *ProjectsRepository) GetProjectByID(userId string, id string) (model.Pro
 /*
 DeleteProjectDB deletes a project from the database
 */
-func (r *ProjectsRepository) DeleteProject(userId string, id string) error {
+func (r *Repository) DeleteProject(userId string, id string) error {
 
 	var project model.Project
 
@@ -144,7 +141,7 @@ func (r *ProjectsRepository) DeleteProject(userId string, id string) error {
 /*
 DeleteProjectFiles deletes a project stored in s3
 */
-func (r *ProjectsRepository) DeleteProjectFiles(userId string, id string) error {
+func (r *Repository) DeleteProjectFiles(userId string, id string) error {
 	s3Err := r.s3.DeleteProjectFiles(userId, id)
 	if s3Err != nil {
 		return s3Err
@@ -156,7 +153,7 @@ func (r *ProjectsRepository) DeleteProjectFiles(userId string, id string) error 
 /*
 UpdateProjectFiles updates the files for a given project in s3
 */
-func (r *ProjectsRepository) UpdateProjectFiles(userId string, id string, files model.ProjectFiles) (
+func (r *Repository) UpdateProjectFiles(userId string, id string, files model.ProjectFiles) (
 	model.ProjectFiles,
 	error,
 ) {

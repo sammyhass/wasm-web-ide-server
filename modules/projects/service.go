@@ -7,19 +7,19 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/wasm"
 )
 
-type ProjectsService struct {
+type Service struct {
 	repo        projectsRepo
-	wasmService *wasm.WasmService
+	wasmService *wasm.Service
 }
 
-func NewProjectsService() *ProjectsService {
-	return &ProjectsService{
+func NewService() *Service {
+	return &Service{
 		repo:        NewProjectsRepository(),
 		wasmService: wasm.NewWasmService(),
 	}
 }
 
-func (s *ProjectsService) CreateProject(
+func (s *Service) CreateProject(
 	name string,
 	userID string,
 ) (model.ProjectView, error) {
@@ -36,15 +36,15 @@ func (s *ProjectsService) CreateProject(
 	return proj.ViewWithFiles(files), nil
 }
 
-func (s *ProjectsService) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
+func (s *Service) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	return s.repo.GetProjectsByUserID(userID)
 }
 
-func (s *ProjectsService) GetProjectByID(userId, id string) (model.ProjectView, error) {
+func (s *Service) GetProjectByID(userId, id string) (model.ProjectView, error) {
 	return s.repo.GetProjectByID(userId, id)
 }
 
-func (s *ProjectsService) DeleteProjectByID(userId, id string) error {
+func (s *Service) DeleteProjectByID(userId, id string) error {
 	err := s.repo.DeleteProject(userId, id)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (s *ProjectsService) DeleteProjectByID(userId, id string) error {
 	return nil
 }
 
-func (s *ProjectsService) CompileProjectWASM(
+func (s *Service) CompileProjectWASM(
 	userId string,
 	projectId string,
 ) (string, error) {
@@ -78,7 +78,7 @@ func (s *ProjectsService) CompileProjectWASM(
 	return "", errors.New("main.go not found")
 }
 
-func (s *ProjectsService) UpdateProjectFiles(
+func (s *Service) UpdateProjectFiles(
 	userId string,
 	projectId string,
 	files model.ProjectFiles,

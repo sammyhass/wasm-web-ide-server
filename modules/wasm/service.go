@@ -12,16 +12,16 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/file_server"
 )
 
-type WasmService struct{}
+type Service struct{}
 
-func NewWasmService() *WasmService {
-	return &WasmService{}
+func NewWasmService() *Service {
+	return &Service{}
 }
 
 /*
 Compile takes a string of Go code and compiles it to web assembly using tinygo, returning the route to the compiled wasm file that is served from the file server.
 */
-func (ws *WasmService) Compile(code string) (string, error) {
+func (ws *Service) Compile(code string) (string, error) {
 
 	tmpFile, err := os.CreateTemp("", "wasm-*.go")
 	if err != nil {

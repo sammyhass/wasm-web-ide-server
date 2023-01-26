@@ -10,19 +10,19 @@ import (
 
 const JWT_CLAIM_USER_ID = "user_id"
 
-type AuthService struct {
+type Service struct {
 	userRepo *user.UserRepository
 }
 
 func NewService(
 	ur *user.UserRepository,
-) *AuthService {
-	return &AuthService{
+) *Service {
+	return &Service{
 		userRepo: ur,
 	}
 }
 
-func (as *AuthService) generateJWTFomUser(u model.User) (string, error) {
+func (as *Service) generateJWTFomUser(u model.User) (string, error) {
 	return generateJWTFromUser(u.ID)
 }
 
@@ -31,7 +31,7 @@ var (
 	errUserAlreadyExists        = errors.New("email already in use")
 )
 
-func (as *AuthService) Login(dto loginDto) (model.User, string, error) {
+func (as *Service) Login(dto loginDto) (model.User, string, error) {
 	found, err := as.userRepo.FindByEmail(dto.Email)
 
 	if err != nil {
@@ -54,7 +54,7 @@ func (as *AuthService) Login(dto loginDto) (model.User, string, error) {
 }
 
 // Register creates a new user
-func (as *AuthService) Register(registerDto loginDto) (model.User, string, error) {
+func (as *Service) Register(registerDto loginDto) (model.User, string, error) {
 
 	_, err := as.userRepo.FindByEmail(registerDto.Email)
 
