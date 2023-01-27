@@ -4,18 +4,15 @@ import (
 	"errors"
 
 	"github.com/sammyhass/web-ide/server/modules/model"
-	"github.com/sammyhass/web-ide/server/modules/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const JWT_CLAIM_USER_ID = "user_id"
-
 type Service struct {
-	userRepo *user.UserRepository
+	userRepo *userRepository
 }
 
-func NewService(
-	ur *user.UserRepository,
+func newService(
+	ur *userRepository,
 ) *Service {
 	return &Service{
 		userRepo: ur,
@@ -31,8 +28,8 @@ var (
 	errUserAlreadyExists        = errors.New("email already in use")
 )
 
-func (as *Service) Login(dto loginDto) (model.User, string, error) {
-	found, err := as.userRepo.FindByEmail(dto.Email)
+func (as *Service) login(dto loginDto) (model.User, string, error) {
+	found, err := as.userRepo.findByEmail(dto.Email)
 
 	if err != nil {
 		return model.User{}, "", errIncorrectEmailOrPassword
@@ -56,7 +53,7 @@ func (as *Service) Login(dto loginDto) (model.User, string, error) {
 // Register creates a new user
 func (as *Service) Register(registerDto loginDto) (model.User, string, error) {
 
-	_, err := as.userRepo.FindByEmail(registerDto.Email)
+	_, err := as.userRepo.findByEmail(registerDto.Email)
 
 	if err == nil {
 		return model.User{}, "", errUserAlreadyExists
@@ -68,7 +65,7 @@ func (as *Service) Register(registerDto loginDto) (model.User, string, error) {
 		return model.User{}, "", err
 	}
 
-	u, err := as.userRepo.Create(user.CreateUserDto{
+	u, err := as.userRepo.create(CreateUserDto{
 		Email:    registerDto.Email,
 		Password: string(hashedPassword),
 	})

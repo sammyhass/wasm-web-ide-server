@@ -2,31 +2,28 @@ package projects
 
 import (
 	"github.com/sammyhass/web-ide/server/modules/model"
-	"github.com/sammyhass/web-ide/server/modules/wasm"
 )
 
-type Service struct {
-	repo        projectsRepo
-	wasmService *wasm.Service
+type service struct {
+	repo projectsRepo
 }
 
-func NewService() *Service {
-	return &Service{
-		repo:        NewProjectsRepository(),
-		wasmService: wasm.NewWasmService(),
+func newService() *service {
+	return &service{
+		repo: NewProjectsRepository(),
 	}
 }
 
-func (s *Service) CreateProject(
+func (s *service) createProject(
 	name string,
 	userID string,
 ) (model.ProjectView, error) {
-	proj, err := s.repo.CreateProject(name, userID)
+	proj, err := s.repo.createProject(name, userID)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
 
-	files, err := s.repo.CreateProjectFiles(proj)
+	files, err := s.repo.createProjectFiles(proj)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
@@ -34,21 +31,21 @@ func (s *Service) CreateProject(
 	return proj.ViewWithFiles(files), nil
 }
 
-func (s *Service) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
-	return s.repo.GetProjectsByUserID(userID)
+func (s *service) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
+	return s.repo.getProjectsByUserID(userID)
 }
 
-func (s *Service) GetProjectByID(userId, id string) (model.ProjectView, error) {
-	return s.repo.GetProjectByID(userId, id)
+func (s *service) getProjectByID(userId, id string) (model.ProjectView, error) {
+	return s.repo.getProjectByID(userId, id)
 }
 
-func (s *Service) DeleteProjectByID(userId, id string) error {
-	err := s.repo.DeleteProject(userId, id)
+func (s *service) deleteProjectByID(userId, id string) error {
+	err := s.repo.deleteProject(userId, id)
 	if err != nil {
 		return err
 	}
 
-	err = s.repo.DeleteProjectFiles(userId, id)
+	err = s.repo.deleteProjectFiles(userId, id)
 	if err != nil {
 		return err
 	}
@@ -56,12 +53,12 @@ func (s *Service) DeleteProjectByID(userId, id string) error {
 	return nil
 }
 
-func (s *Service) CompileProjectWASM(
+func (s *service) compileProjectWASM(
 	userId string,
 	projectId string,
 ) (string, error) {
 
-	proj, err := s.repo.GetProjectByID(userId, projectId)
+	proj, err := s.repo.getProjectByID(userId, projectId)
 
 	if err != nil {
 		return "", err
@@ -77,10 +74,20 @@ func (s *Service) CompileProjectWASM(
 		return "", err
 	}
 
-	return s.wasmService.Compile(mainFile, modFile)
+	wasm, err := compileProject(mainFile, modFile)
+
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.repo.uploadProjectWasm(userId, projectId, wasm); err != nil {
+		return "", err
+	}
+
+	return s.repo.getProjectWasmPresignedURL(userId, projectId)
 }
 
-func (s *Service) UpdateProjectFiles(
+func (s *service) updateProjectFiles(
 	userId string,
 	projectId string,
 	files model.ProjectFiles,
@@ -88,5 +95,5 @@ func (s *Service) UpdateProjectFiles(
 	model.ProjectFiles,
 	error,
 ) {
-	return s.repo.UpdateProjectFiles(userId, projectId, files)
+	return s.repo.updateProjectSrcFiles(userId, projectId, files)
 }

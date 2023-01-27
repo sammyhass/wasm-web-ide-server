@@ -6,17 +6,17 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/model"
 )
 
-type Controller struct {
-	service *Service
+type controller struct {
+	service *service
 }
 
-func NewController() *Controller {
-	return &Controller{
-		service: NewService(),
+func NewController() *controller {
+	return &controller{
+		service: newService(),
 	}
 }
 
-func (c *Controller) Routes(
+func (c *controller) Routes(
 	group *gin.RouterGroup,
 ) {
 	group.GET("", auth.Protected(c.getProjects))
@@ -33,7 +33,7 @@ type newProjectDto struct {
 	Name string `json:"name"`
 }
 
-func (c *Controller) createProject(
+func (c *controller) createProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -44,7 +44,7 @@ func (c *Controller) createProject(
 		return
 	}
 
-	proj, err := c.service.CreateProject(dto.Name, uuid)
+	proj, err := c.service.createProject(dto.Name, uuid)
 
 	if err != nil {
 		ctx.Error(err)
@@ -54,11 +54,11 @@ func (c *Controller) createProject(
 	ctx.JSON(200, proj)
 }
 
-func (c *Controller) getProjects(
+func (c *controller) getProjects(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	projects, err := c.service.GetProjectsByUserID(uuid)
+	projects, err := c.service.getProjectsByUserID(uuid)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -67,11 +67,11 @@ func (c *Controller) getProjects(
 	ctx.JSON(200, projects)
 }
 
-func (c *Controller) getProject(
+func (c *controller) getProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	project, err := c.service.GetProjectByID(uuid, ctx.Param("id"))
+	project, err := c.service.getProjectByID(uuid, ctx.Param("id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -80,11 +80,11 @@ func (c *Controller) getProject(
 	ctx.JSON(200, project)
 }
 
-func (c *Controller) deleteProject(
+func (c *controller) deleteProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	err := c.service.DeleteProjectByID(uuid, ctx.Param("id"))
+	err := c.service.deleteProjectByID(uuid, ctx.Param("id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -97,7 +97,7 @@ type updateProjectFilesDto struct {
 	Files model.ProjectFiles `json:"files"`
 }
 
-func (c *Controller) updateProject(
+func (c *controller) updateProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
@@ -108,7 +108,7 @@ func (c *Controller) updateProject(
 		return
 	}
 
-	_, err := c.service.UpdateProjectFiles(
+	_, err := c.service.updateProjectFiles(
 		uuid,
 		ctx.Param("id"),
 		dto.Files,
@@ -124,11 +124,11 @@ func (c *Controller) updateProject(
 	)
 }
 
-func (c *Controller) compileProjectToWasm(
+func (c *controller) compileProjectToWasm(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	path, err := c.service.CompileProjectWASM(uuid, ctx.Param("id"))
+	path, err := c.service.compileProjectWASM(uuid, ctx.Param("id"))
 
 	if err != nil {
 		ctx.Error(err)

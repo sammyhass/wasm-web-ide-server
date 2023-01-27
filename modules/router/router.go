@@ -10,17 +10,17 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/router/middleware"
 )
 
-// Controller should be implemented by all controllers in order to register their routes with the gin engine
-type Controller interface {
+// controller should be implemented by all controllers in order to register their routes with the gin engine
+type controller interface {
 	// Routes can be used to register routes for a given controller
 	Routes(e *gin.RouterGroup)
 }
 
-// Router is a wrapper around the gin.Engine that allows for the registration of RouterGroup
-type Router struct {
+// router is a wrapper around the gin.Engine that allows for the registration of RouterGroup
+type router struct {
 	Engine *gin.Engine
 
-	controllers map[string]Controller
+	controllers map[string]controller
 }
 
 func newEngine() *gin.Engine {
@@ -31,15 +31,15 @@ func newEngine() *gin.Engine {
 	return eng
 }
 
-func NewRouter() *Router {
-	return &Router{
+func newRouter() *router {
+	return &router{
 		Engine:      newEngine(),
-		controllers: make(map[string]Controller),
+		controllers: make(map[string]controller),
 	}
 }
 
-// UseController register a controller with the router
-func (r *Router) UseController(name string, controller Controller) {
+// useController register a controller with the router
+func (r *router) useController(name string, controller controller) {
 	if _, ok := r.controllers[name]; ok {
 		log.Fatalf("controller %s already registered", name)
 
@@ -49,14 +49,14 @@ func (r *Router) UseController(name string, controller Controller) {
 }
 
 // Run starts the server on the given port
-func (r *Router) Run(port string) {
+func (r *router) run(port string) {
 	r.Engine.Run(
 		":" + port,
 	)
 }
 
-// Routes runs the Routes function for each controller with a router group
-func (r *Router) Routes() {
+// routes runs the routes function for each controller with a router group
+func (r *router) routes() {
 	r.Middleware()
 
 	for name, controller := range r.controllers {
@@ -66,14 +66,14 @@ func (r *Router) Routes() {
 }
 
 // Middleware should be used to register all middleware for the router
-func (r *Router) Middleware() {
+func (r *router) Middleware() {
 	r.useCORS()
 
 	r.Engine.Use(middleware.ErrorHandler)
 	r.Engine.Use(middleware.AuthMiddleware)
 }
 
-func (r *Router) useCORS() {
+func (r *router) useCORS() {
 	allowedHeaders := []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
 		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent", "Pragma"}
 

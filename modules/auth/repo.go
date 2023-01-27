@@ -1,4 +1,4 @@
-package user
+package auth
 
 import (
 	"github.com/google/uuid"
@@ -7,12 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRepository struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
-func NewRepository() *UserRepository {
-	return &UserRepository{
+func newRepository() *userRepository {
+	return &userRepository{
 		db: db.GetConnection(),
 	}
 }
@@ -22,7 +22,7 @@ type CreateUserDto struct {
 	Password string `json:"password"` // accepts the hashed password
 }
 
-func (ur *UserRepository) Create(userDto CreateUserDto) (model.User, error) {
+func (ur *userRepository) create(userDto CreateUserDto) (model.User, error) {
 
 	newUser := model.User{
 		ID:       uuid.New().String(),
@@ -39,7 +39,7 @@ func (ur *UserRepository) Create(userDto CreateUserDto) (model.User, error) {
 	return newUser, nil
 }
 
-func (ur *UserRepository) FindById(
+func (ur *userRepository) findById(
 	id string,
 ) (model.User, error) {
 	var user model.User
@@ -53,7 +53,7 @@ func (ur *UserRepository) FindById(
 	return user, nil
 }
 
-func (ur *UserRepository) FindByEmail(
+func (ur *userRepository) findByEmail(
 	email string,
 ) (model.User, error) {
 	var user model.User

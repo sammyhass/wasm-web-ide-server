@@ -2,22 +2,21 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sammyhass/web-ide/server/modules/user"
 )
 
-type Controller struct {
+type controller struct {
 	svc *Service
 }
 
-func NewController() *Controller {
-	return &Controller{
-		svc: NewService(
-			user.NewRepository(),
+func NewController() *controller {
+	return &controller{
+		svc: newService(
+			newRepository(),
 		),
 	}
 }
 
-func (ac *Controller) Routes(e *gin.RouterGroup) {
+func (ac *controller) Routes(e *gin.RouterGroup) {
 	e.POST("/login", ac.login)
 	e.POST("/register", ac.register)
 	e.GET("/me", Protected(ac.me))
@@ -28,7 +27,7 @@ type loginDto struct {
 	Password string `json:"password"`
 }
 
-func (ac *Controller) login(c *gin.Context) {
+func (ac *controller) login(c *gin.Context) {
 	var dto loginDto
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
@@ -36,7 +35,7 @@ func (ac *Controller) login(c *gin.Context) {
 		return
 	}
 
-	user, jwt, err := ac.svc.Login(dto)
+	user, jwt, err := ac.svc.login(dto)
 
 	if err != nil {
 		c.Error(err)
@@ -52,7 +51,7 @@ func (ac *Controller) login(c *gin.Context) {
 
 }
 
-func (ac *Controller) register(c *gin.Context) {
+func (ac *controller) register(c *gin.Context) {
 	var dto loginDto
 
 	if err := c.ShouldBindJSON(&dto); err != nil {
@@ -76,8 +75,8 @@ func (ac *Controller) register(c *gin.Context) {
 
 }
 
-func (ac *Controller) me(c *gin.Context, uuid string) {
-	user, err := ac.svc.userRepo.FindById(uuid)
+func (ac *controller) me(c *gin.Context, uuid string) {
+	user, err := ac.svc.userRepo.findById(uuid)
 
 	if err != nil {
 		c.Error(err)

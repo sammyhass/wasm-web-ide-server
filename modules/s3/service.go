@@ -2,9 +2,11 @@ package s3
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -47,47 +49,43 @@ func NewS3Service() *Service {
 }
 
 func (svc *Service) UploadFile(
-	userId, projectId, fileName, content string,
+	dir, fileName, content string,
 ) (string, error) {
+	loc, err := svc.Upload(dir, fileName, strings.NewReader(content))
 
-	res, err := svc.uploader.Upload(&s3manager.UploadInput{
+	if err != nil {
+		return "", err
+	}
+
+	return loc, nil
+}
+
+func (svc *Service) Upload(
+	dir, fileName string,
+	r io.Reader,
+) (string, error) {
+	out, err := svc.uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(env.Get(env.S3_BUCKET)),
 		Key: aws.String(
-			fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
+			fmt.Sprintf("%s/%s", dir, fileName),
 		),
-		Body: strings.NewReader(content),
+		Body: r,
 	})
 
 	if err != nil {
 		return "", err
 	}
 
-	return res.Location, nil
+	return out.Location, nil
 }
 
 /*
-UploadProjectFiles uploads a map of files to s3. It uses a wait group to wait for all the files to be uploaded.
+GetFiles gets a map of files contained in a directory in the s3 bucket
 */
-func (svc *Service) UploadProjectFiles(
-	userId, projectId string,
-	files model.ProjectFiles,
-) (model.ProjectFiles, error) {
-	err := svc.UploadFiles(userId, projectId, files)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
-
-/*
-GetProjectFiles gets a map of files contained in a project on s3. First it gets a list of all the files in the project, then it downloads each file concurrently.
-*/
-func (svc *Service) GetProjectFiles(userId, projectId string) (model.ProjectFiles, error) {
+func (svc *Service) GetFiles(dir string) (model.ProjectFiles, error) {
 	res, err := svc.s3.ListObjects(&s3.ListObjectsInput{
 		Bucket: aws.String(env.Get(env.S3_BUCKET)),
-		Prefix: aws.String(fmt.Sprintf("%s/%s", userId, projectId)),
+		Prefix: aws.String(dir),
 	})
 
 	if err != nil {
@@ -107,8 +105,6 @@ func (svc *Service) GetProjectFiles(userId, projectId string) (model.ProjectFile
 		go func(obj *s3.Object) {
 			defer wg.Done()
 
-			fileName := strings.Split(*obj.Key, "/")[2]
-
 			content, err := svc.GetFile(*obj.Key)
 
 			if err != nil {
@@ -116,11 +112,16 @@ func (svc *Service) GetProjectFiles(userId, projectId string) (model.ProjectFile
 				return
 			}
 
+			// get file name from key at the last index
+			spl := strings.Split(*obj.Key, "/")
+			fileName := spl[len(spl)-1]
+			if fileName == "" {
+				return
+			}
+
 			mu.Lock()
 			defer mu.Unlock()
 			files[fileName] = content
-
-			fmt.Printf("got file %s", fileName)
 		}(obj)
 	}
 
@@ -151,52 +152,45 @@ func (svc *Service) GetFile(path string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
-func (svc *Service) DeleteFile(userId, projectId, fileName string) error {
-	_, err := svc.s3.DeleteObject(
-		&s3.DeleteObjectInput{
-			Bucket: aws.String(env.Get(env.S3_BUCKET)),
-			Key: aws.String(
-				fmt.Sprintf("%s/%s/%s", userId, projectId, fileName),
-			),
-		},
-	)
-
-	return err
-}
-
 /*
-DeleteProjectFiles deletes all the files in a project in s3.
+DeleteDir deletes all the files in a project in s3.
 */
-func (svc *Service) DeleteProjectFiles(userId, projectId string) error {
-	errs := make(chan error)
-	files := model.DefaultFiles
+func (svc *Service) DeleteDir(dir string) error {
+	res, err := svc.s3.ListObjects(&s3.ListObjectsInput{
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
+		Prefix: aws.String(dir),
+	})
+
+	if err != nil {
+		return err
+	}
 
 	var wg sync.WaitGroup
-	wg.Add(len(files))
 
-	for name, file := range files {
-		go func(file string) {
+	wg.Add(len(res.Contents))
+
+	for _, obj := range res.Contents {
+		go func(obj *s3.Object) {
 			defer wg.Done()
-			errs <- svc.DeleteFile(userId, projectId, name)
-		}(file)
+			_, err := svc.s3.DeleteObject(
+				&s3.DeleteObjectInput{
+					Bucket: aws.String(env.Get(env.S3_BUCKET)),
+					Key:    obj.Key,
+				},
+			)
+
+			if err != nil {
+				log.Println(err)
+			}
+		}(obj)
 	}
 
-	go func() {
-		wg.Wait()
-		close(errs)
-	}()
-
-	for err := range errs {
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-	}
+	wg.Wait()
 
 	return nil
 }
 
-func (svc *Service) UploadFiles(userId string, projectId string, files model.ProjectFiles) error {
+func (svc *Service) UploadFiles(dir string, files model.ProjectFiles) error {
 	var wg sync.WaitGroup
 
 	errs := make(chan error)
@@ -206,7 +200,7 @@ func (svc *Service) UploadFiles(userId string, projectId string, files model.Pro
 	for name, content := range files {
 		go func(name, content string) {
 			defer wg.Done()
-			_, err := svc.UploadFile(userId, projectId, name, content)
+			_, err := svc.UploadFile(dir, name, content)
 			if err != nil {
 				errs <- err
 			}
@@ -225,4 +219,19 @@ func (svc *Service) UploadFiles(userId string, projectId string, files model.Pro
 	}
 
 	return nil
+}
+
+func (svc *Service) GenPresignedURL(path string, exp time.Duration) (string, error) {
+	req, _ := svc.s3.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(env.Get(env.S3_BUCKET)),
+		Key:    aws.String(path),
+	})
+
+	url, err := req.Presign(exp)
+
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

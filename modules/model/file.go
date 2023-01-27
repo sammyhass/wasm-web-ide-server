@@ -18,6 +18,7 @@ type ProjectFiles map[string]string
 func ProjectFilesToFileViews(files ProjectFiles) []FileView {
 	var fileViews []FileView
 	for path, content := range files {
+		fmt.Println(path, strings.Split(path, "."))
 		fileViews = append(fileViews, FileView{
 			Name:     path,
 			Content:  content,

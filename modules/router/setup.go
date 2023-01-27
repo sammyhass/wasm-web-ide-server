@@ -9,13 +9,13 @@ import (
 func Run(
 	port string,
 ) {
-	router := NewRouter()
+	router := newRouter()
 
-	router.UseController(file_server.CONTROLLER_ROUTE, file_server.NewController())
-	router.UseController("/auth", auth.NewController())
-	router.UseController("/projects", projects.NewController())
+	router.useController(file_server.CONTROLLER_ROUTE, file_server.NewController())
+	router.useController("/auth", auth.NewController())
+	router.useController("/projects", projects.NewController())
 
-	router.Routes()
+	router.routes()
 
-	router.Run(port)
+	router.run(port)
 }

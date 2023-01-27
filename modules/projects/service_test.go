@@ -2,6 +2,7 @@ package projects
 
 import (
 	"errors"
+	"io"
 	"testing"
 	"time"
 
@@ -31,12 +32,12 @@ var fakeProject = model.Project{
 	},
 }
 
-func (r *repoMock) CreateProject(name, userID string) (model.Project, error) {
+func (r *repoMock) createProject(name, userID string) (model.Project, error) {
 	args := r.Called(name, userID)
 	return fakeProject, args.Error(1)
 }
 
-func (r *repoMock) GetProjectsByUserID(userId string) ([]model.ProjectView, error) {
+func (r *repoMock) getProjectsByUserID(userId string) ([]model.ProjectView, error) {
 	args := r.Called(userId)
 
 	return []model.ProjectView{
@@ -44,42 +45,52 @@ func (r *repoMock) GetProjectsByUserID(userId string) ([]model.ProjectView, erro
 	}, args.Error(1)
 }
 
-func (r *repoMock) CreateProjectFiles(project model.Project) (model.ProjectFiles, error) {
+func (r *repoMock) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	args := r.Called(project)
 	return model.DefaultFiles, args.Error(1)
 }
 
-func (r *repoMock) GetProjectByID(userId, projectID string) (model.ProjectView, error) {
+func (r *repoMock) getProjectByID(userId, projectID string) (model.ProjectView, error) {
 	args := r.Called(userId, projectID)
 	return fakeProject.ViewWithFiles(model.DefaultFiles), args.Error(1)
 }
 
-func (r *repoMock) DeleteProject(userId, projectID string) error {
+func (r *repoMock) deleteProject(userId, projectID string) error {
 	args := r.Called(userId, projectID)
 	return args.Error(0)
 }
 
-func (r *repoMock) DeleteProjectFiles(userId, projectID string) error {
+func (r *repoMock) deleteProjectFiles(userId, projectID string) error {
 	args := r.Called(projectID)
 	return args.Error(0)
 }
 
-func (r *repoMock) UpdateProjectFiles(userId, projectId string, files model.ProjectFiles) (model.ProjectFiles, error) {
+func (r *repoMock) updateProjectSrcFiles(userId, projectId string, files model.ProjectFiles) (model.ProjectFiles, error) {
 	args := r.Called(userId, projectId, files)
 	return model.DefaultFiles, args.Error(1)
+}
+
+func (r *repoMock) uploadProjectWasm(userId, projectId string, f io.Reader) error {
+	args := r.Called(userId, projectId, f)
+	return args.Error(0)
+}
+
+func (r *repoMock) genPresignedURL(userId, projectId, fileName string) (string, error) {
+	args := r.Called(userId, projectId, fileName)
+	return "", args.Error(0)
 }
 
 func TestProjectsService_CreateProject_Success(t *testing.T) {
 	repoMock := &repoMock{}
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	repoMock.On("CreateProject", projName, projUserId).Return(fakeProject, nil)
-	repoMock.On("CreateProjectFiles", fakeProject).Return(model.DefaultFiles, nil)
+	repoMock.On("createProject", projName, projUserId).Return(fakeProject, nil)
+	repoMock.On("createProjectFiles", fakeProject).Return(model.DefaultFiles, nil)
 
-	pv, err := s.CreateProject(projName, projUserId)
+	pv, err := s.createProject(projName, projUserId)
 
 	if err != nil {
 		t.Error(err)
@@ -98,13 +109,13 @@ func TestProjectsService_CreateProject_Success(t *testing.T) {
 func TestProjectsService_CreateProject_DB_Error(t *testing.T) {
 	repoMock := &repoMock{}
 	dbErr := errors.New("Couldn't create project in DB")
-	repoMock.On("CreateProject", projName, projUserId).Return(model.Project{}, dbErr)
+	repoMock.On("createProject", projName, projUserId).Return(model.Project{}, dbErr)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.CreateProject("projectName", "user_id")
+	_, err := s.createProject("projectName", "user_id")
 
 	if err != dbErr {
 		t.Error("Expected error to be returned")
@@ -116,14 +127,14 @@ func TestProjectsService_CreateProject_DB_Error(t *testing.T) {
 func TestProjectsService_CreateProject_S3_Error(t *testing.T) {
 	repoMock := &repoMock{}
 	s3Error := errors.New("Couldn't create project in S3")
-	repoMock.On("CreateProject", projName, projUserId).Return(model.ProjectView{}, nil)
-	repoMock.On("CreateProjectFiles", mock.Anything).Return(model.ProjectFiles{}, s3Error)
+	repoMock.On("createProject", projName, projUserId).Return(model.ProjectView{}, nil)
+	repoMock.On("createProjectFiles", mock.Anything).Return(model.ProjectFiles{}, s3Error)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.CreateProject("projectName", "user_id")
+	_, err := s.createProject("projectName", "user_id")
 
 	if err != s3Error {
 		t.Error("Expected s3 error to be returned")
@@ -134,13 +145,13 @@ func TestProjectsService_CreateProject_S3_Error(t *testing.T) {
 
 func TestProjectsService_GetProjectsByUserID_Success(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("GetProjectsByUserID", projUserId).Return([]model.ProjectView{}, nil)
+	repoMock.On("getProjectsByUserID", projUserId).Return([]model.ProjectView{}, nil)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	pv, err := s.GetProjectsByUserID("user_id")
+	pv, err := s.getProjectsByUserID("user_id")
 
 	if err != nil {
 		t.Error(err)
@@ -159,13 +170,13 @@ func TestProjectsService_GetProjectsByUserID_Success(t *testing.T) {
 
 func TestProjectsService_GetProjectsByUserID_Error(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("GetProjectsByUserID", projUserId).Return([]model.ProjectView{}, errors.New("Couldn't get projects"))
+	repoMock.On("getProjectsByUserID", projUserId).Return([]model.ProjectView{}, errors.New("Couldn't get projects"))
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.GetProjectsByUserID("user_id")
+	_, err := s.getProjectsByUserID("user_id")
 
 	if err == nil {
 		t.Error("Expected error to be returned")
@@ -176,13 +187,13 @@ func TestProjectsService_GetProjectsByUserID_Error(t *testing.T) {
 
 func TestProjectsService_GetProjectByID(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("GetProjectByID", projUserId, "1").Return(fakeProject.ViewWithFiles(model.DefaultFiles), nil)
+	repoMock.On("getProjectByID", projUserId, "1").Return(fakeProject.ViewWithFiles(model.DefaultFiles), nil)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.GetProjectByID(projUserId, "1")
+	_, err := s.getProjectByID(projUserId, "1")
 
 	if err != nil {
 		t.Error(err)
@@ -193,14 +204,14 @@ func TestProjectsService_GetProjectByID(t *testing.T) {
 
 func TestProjectsService_DeleteProjectByID(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("DeleteProject", projUserId, "1").Return(nil)
-	repoMock.On("DeleteProjectFiles", "1").Return(nil)
+	repoMock.On("deleteProject", projUserId, "1").Return(nil)
+	repoMock.On("deleteProjectFiles", "1").Return(nil)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	err := s.DeleteProjectByID(projUserId, "1")
+	err := s.deleteProjectByID(projUserId, "1")
 
 	if err != nil {
 		t.Error(err)
@@ -211,13 +222,13 @@ func TestProjectsService_DeleteProjectByID(t *testing.T) {
 
 func TestProjectsService_DeleteProjectByID_DB_Error(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("DeleteProject", projUserId, "1").Return(errors.New("Couldn't delete project"))
+	repoMock.On("deleteProject", projUserId, "1").Return(errors.New("Couldn't delete project"))
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	err := s.DeleteProjectByID(projUserId, "1")
+	err := s.deleteProjectByID(projUserId, "1")
 
 	if err == nil {
 		t.Error("Expected error to be returned")
@@ -229,14 +240,14 @@ func TestProjectsService_DeleteProjectByID_DB_Error(t *testing.T) {
 func TestProjectsService_DeleteProjectByID_S3_Error(t *testing.T) {
 	s3Err := errors.New("Couldn't delete project files")
 	repoMock := &repoMock{}
-	repoMock.On("DeleteProject", projUserId, "1").Return(nil)
-	repoMock.On("DeleteProjectFiles", "1").Return(s3Err)
+	repoMock.On("deleteProject", projUserId, "1").Return(nil)
+	repoMock.On("deleteProjectFiles", "1").Return(s3Err)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	err := s.DeleteProjectByID(projUserId, "1")
+	err := s.deleteProjectByID(projUserId, "1")
 
 	if err != s3Err {
 		t.Error("Expected error to be returned")
@@ -247,13 +258,13 @@ func TestProjectsService_DeleteProjectByID_S3_Error(t *testing.T) {
 
 func TestProjectsService_UpdateProjectFiles_Success(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("UpdateProjectFiles", projUserId, "1", model.DefaultFiles).Return(model.DefaultFiles, nil)
+	repoMock.On("updateProjectSrcFiles", projUserId, "1", model.DefaultFiles).Return(model.DefaultFiles, nil)
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.UpdateProjectFiles(projUserId, "1", model.DefaultFiles)
+	_, err := s.updateProjectFiles(projUserId, "1", model.DefaultFiles)
 
 	if err != nil {
 		t.Error(err)
@@ -264,13 +275,13 @@ func TestProjectsService_UpdateProjectFiles_Success(t *testing.T) {
 
 func TestProjectsService_UpdateProjectFiles_Error(t *testing.T) {
 	repoMock := &repoMock{}
-	repoMock.On("UpdateProjectFiles", projUserId, "1", model.DefaultFiles).Return(model.DefaultFiles, errors.New("Couldn't update project files"))
+	repoMock.On("updateProjectSrcFiles", projUserId, "1", model.DefaultFiles).Return(model.DefaultFiles, errors.New("Couldn't update project files"))
 
-	s := &Service{
+	s := &service{
 		repo: repoMock,
 	}
 
-	_, err := s.UpdateProjectFiles(projUserId, "1", model.DefaultFiles)
+	_, err := s.updateProjectFiles(projUserId, "1", model.DefaultFiles)
 
 	if err == nil {
 		t.Error("Expected error to be returned")
