@@ -84,7 +84,7 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	return s.repo.getProjectWasmPresignedURL(userId, projectId)
+	return s.repo.genProjectWasmPresignedURL(userId, projectId)
 }
 
 func (s *service) updateProjectFiles(

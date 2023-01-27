@@ -64,7 +64,8 @@ func installDeps(dir string) error {
 }
 
 /*
-CompileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning the route to the compiled wasm file that is served from the file server.
+compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a
+reader to the compiled wasm file
 */
 func compileProject(code string, goMod string) (io.Reader, error) {
 

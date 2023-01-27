@@ -2,7 +2,6 @@ package projects
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"path"
 	"time"
@@ -12,6 +11,21 @@ import (
 	"github.com/sammyhass/web-ide/server/modules/s3"
 	"gorm.io/gorm"
 )
+
+// getProjectDir returns the path to the project directory as stored in the s3 bucket
+func getProjectDir(userId string, id string) string {
+	return path.Join(userId, id)
+}
+
+// getProjectSrcDir returns the path to the project source directory as stored in the s3 bucket
+func getProjectSrcDir(userId string, id string) string {
+	return path.Join(getProjectDir(userId, id), "src")
+}
+
+// getProjectWasmDir returns the path to the project wasm directory as stored in the s3 bucket
+func getProjectWasmDir(userId string, id string) string {
+	return path.Join(getProjectDir(userId, id), "build")
+}
 
 type projectsRepo interface {
 	createProject(
@@ -29,18 +43,18 @@ type projectsRepo interface {
 
 	updateProjectSrcFiles(userId string, id string, files model.ProjectFiles) (model.ProjectFiles, error)
 
-	uploadProjectWasm(userId string, id string, f io.Reader) error
+	uploadProjectWasm(userId string, id string, r io.Reader) error
 
-	getProjectWasmPresignedURL(userId string, id string) (string, error)
+	genProjectWasmPresignedURL(userId string, id string) (string, error)
 }
 
-type Repository struct {
+type repository struct {
 	db *gorm.DB
 	s3 *s3.Service
 }
 
-func NewProjectsRepository() *Repository {
-	return &Repository{
+func NewProjectsRepository() *repository {
+	return &repository{
 		db: db.GetConnection(),
 		s3: s3.NewS3Service(),
 	}
@@ -49,7 +63,7 @@ func NewProjectsRepository() *Repository {
 /*
 createProject creates a new project in the database
 */
-func (r *Repository) createProject(
+func (r *repository) createProject(
 	name string,
 	userID string,
 ) (model.Project, error) {
@@ -68,13 +82,14 @@ func (r *Repository) createProject(
 	return proj, nil
 }
 
-func (r *Repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
+// createProjectFiles creates the default files for a project in s3
+func (r *repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	goMod := model.DefaultGoMod(project.Name)
 	files := model.DefaultFiles
 
 	files["go.mod"] = goMod
 
-	srcDir := fmt.Sprintf("%s/%s/src", project.UserID, project.ID)
+	srcDir := getProjectSrcDir(project.UserID, project.ID)
 
 	if err := r.s3.UploadFiles(srcDir, files); err != nil {
 		return nil, err
@@ -86,7 +101,7 @@ func (r *Repository) createProjectFiles(project model.Project) (model.ProjectFil
 /*
 getProjectsByUserID returns all projects for a given user (without files)
 */
-func (r *Repository) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
+func (r *repository) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	var projects []*model.Project
 
 	err := r.db.Where("user_id = ?", userID).Find(&projects).Error
@@ -105,7 +120,7 @@ func (r *Repository) getProjectsByUserID(userID string) ([]model.ProjectView, er
 /*
 getProjectByID returns a project for a given user with the given id returning the database record and the files in s3
 */
-func (r *Repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
+func (r *repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
 	var project model.Project
 
 	err := r.db.Where("id = ?", id).First(&project).Error
@@ -118,7 +133,7 @@ func (r *Repository) getProjectByID(userId string, id string) (model.ProjectView
 		return model.ProjectView{}, errors.New("project not found")
 	}
 
-	files, err := r.s3.GetFiles(fmt.Sprintf("%s/%s/src", userId, id))
+	files, err := r.s3.GetFiles(getProjectSrcDir(userId, id))
 
 	if err != nil {
 		return model.ProjectView{}, err
@@ -128,9 +143,9 @@ func (r *Repository) getProjectByID(userId string, id string) (model.ProjectView
 }
 
 /*
-DeleteProject deletes a project from the database
+deleteProject deletes a project from the database
 */
-func (r *Repository) deleteProject(userId string, id string) error {
+func (r *repository) deleteProject(userId string, id string) error {
 
 	var project model.Project
 
@@ -153,10 +168,10 @@ func (r *Repository) deleteProject(userId string, id string) error {
 }
 
 /*
-DeleteDir deletes a project stored in s3
+deleteProjectFiles deletes a project stored in s3
 */
-func (r *Repository) deleteProjectFiles(userId string, id string) error {
-	dir := fmt.Sprintf("%s/%s", userId, id)
+func (r *repository) deleteProjectFiles(userId string, id string) error {
+	dir := getProjectDir(userId, id)
 	s3Err := r.s3.DeleteDir(dir)
 	if s3Err != nil {
 		return s3Err
@@ -168,11 +183,11 @@ func (r *Repository) deleteProjectFiles(userId string, id string) error {
 /*
 updateProjectFiles updates the files for a given project in s3
 */
-func (r *Repository) updateProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
+func (r *repository) updateProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
 	model.ProjectFiles,
 	error,
 ) {
-	srcDir := fmt.Sprintf("%s/%s/src", userId, id)
+	srcDir := getProjectSrcDir(userId, id)
 	err := r.s3.UploadFiles(srcDir, files)
 	if err != nil {
 		return nil, err
@@ -181,8 +196,8 @@ func (r *Repository) updateProjectSrcFiles(userId string, id string, files model
 	return files, nil
 }
 
-func (r *Repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
-	wasmDir := fmt.Sprintf("%s/%s/build", userId, id)
+func (r *repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
+	wasmDir := getProjectWasmDir(userId, id)
 	_, err := r.s3.Upload(wasmDir, "main.wasm", file)
 	if err != nil {
 		return err
@@ -191,8 +206,8 @@ func (r *Repository) uploadProjectWasm(userId string, id string, file io.Reader)
 	return nil
 }
 
-func (r *Repository) getProjectWasmPresignedURL(userId string, id string) (string, error) {
-	wasmDir := fmt.Sprintf("%s/%s/build", userId, id)
+func (r *repository) genProjectWasmPresignedURL(userId string, id string) (string, error) {
+	wasmDir := getProjectWasmDir(userId, id)
 	url, err := r.s3.GenPresignedURL(path.Join(wasmDir, "main.wasm"), time.Hour*24*7)
 	if err != nil {
 		return "", err
