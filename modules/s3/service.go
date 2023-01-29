@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -222,9 +224,11 @@ func (svc *Service) UploadFiles(dir string, files model.ProjectFiles) error {
 }
 
 func (svc *Service) GenPresignedURL(path string, exp time.Duration) (string, error) {
+	contentType := mime.TypeByExtension(filepath.Ext(path))
 	req, _ := svc.s3.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(env.Get(env.S3_BUCKET)),
-		Key:    aws.String(path),
+		Bucket:              aws.String(env.Get(env.S3_BUCKET)),
+		Key:                 aws.String(path),
+		ResponseContentType: aws.String(contentType),
 	})
 
 	url, err := req.Presign(exp)

@@ -20,6 +20,7 @@ type ProjectView struct {
 	Name      string     `json:"name"`
 	UserID    string     `json:"user_id"`
 	Files     []FileView `json:"files"`
+	WasmPath  string     `json:"wasm_path"`
 }
 
 func (p *Project) View() ProjectView {
@@ -28,6 +29,20 @@ func (p *Project) View() ProjectView {
 		CreatedAt: p.CreatedAt,
 		Name:      p.Name,
 		UserID:    p.UserID,
+	}
+}
+
+func (p *Project) ViewWith(
+	wasmPath string,
+	files ProjectFiles,
+) ProjectView {
+	return ProjectView{
+		ID:        p.ID,
+		CreatedAt: p.CreatedAt,
+		Name:      p.Name,
+		UserID:    p.UserID,
+		WasmPath:  wasmPath,
+		Files:     ProjectFilesToFileViews(files),
 	}
 }
 

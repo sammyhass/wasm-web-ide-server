@@ -45,6 +45,8 @@ type projectsRepo interface {
 
 	uploadProjectWasm(userId string, id string, r io.Reader) error
 
+	genSrcPresignedURL(userId string, id string, filename string) (string, error)
+
 	genProjectWasmPresignedURL(userId string, id string) (string, error)
 }
 
@@ -139,7 +141,12 @@ func (r *repository) getProjectByID(userId string, id string) (model.ProjectView
 		return model.ProjectView{}, err
 	}
 
-	return project.ViewWithFiles(files), nil
+	wasmUrl, err := r.genProjectWasmPresignedURL(userId, id)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	return project.ViewWith(wasmUrl, files), nil
 }
 
 /*
@@ -209,6 +216,17 @@ func (r *repository) uploadProjectWasm(userId string, id string, file io.Reader)
 func (r *repository) genProjectWasmPresignedURL(userId string, id string) (string, error) {
 	wasmDir := getProjectWasmDir(userId, id)
 	url, err := r.s3.GenPresignedURL(path.Join(wasmDir, "main.wasm"), time.Hour*24*7)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
+}
+
+/* genSrcPresignedURL generates a presigned url for a source file in a project (not wasm) */
+func (r *repository) genSrcPresignedURL(userId string, id string, filename string) (string, error) {
+	srcDir := getProjectSrcDir(userId, id)
+	url, err := r.s3.GenPresignedURL(path.Join(srcDir, filename), time.Hour*24*7)
 	if err != nil {
 		return "", err
 	}

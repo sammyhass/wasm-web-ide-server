@@ -49,6 +49,7 @@ func createTempCodeDir(code string, goMod string) (string, error, func()) {
 	return tmpDir, nil, deleteDir
 }
 
+// installDeps runs go get -d ./... in the given directory to install dependencies
 func installDeps(dir string) error {
 	cmd := exec.Command("go", "get", "-d", "./...")
 	cmd.Dir = dir

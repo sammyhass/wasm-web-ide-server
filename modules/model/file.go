@@ -56,8 +56,16 @@ var goModTemplate = `module %s
 go 1.19`
 
 func DefaultGoMod(projName string) string {
-	slug := strings.TrimSpace(strings.ToLower(projName))
-	slug = strings.ReplaceAll(slug, " ", "-")
+	// replace spaces with dashes and all special characters with nothing
+	slug := strings.Map(func(r rune) rune {
+		if r == ' ' {
+			return '-'
+		}
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return -1
+	}, projName)
 	return fmt.Sprintf(goModTemplate, slug)
 }
 
