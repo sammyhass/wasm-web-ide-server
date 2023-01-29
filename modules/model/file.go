@@ -56,7 +56,6 @@ var goModTemplate = `module %s
 go 1.19`
 
 func DefaultGoMod(projName string) string {
-	// replace spaces with dashes and all special characters with nothing
 	slug := strings.Map(func(r rune) rune {
 		if r == ' ' {
 			return '-'
