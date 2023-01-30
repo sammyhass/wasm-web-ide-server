@@ -84,7 +84,7 @@ func (svc *Service) Upload(
 /*
 GetFiles gets a map of files contained in a directory in the s3 bucket
 */
-func (svc *Service) GetFiles(dir string) (model.ProjectFiles, error) {
+func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 	res, err := svc.s3.ListObjects(&s3.ListObjectsInput{
 		Bucket: aws.String(env.Get(env.S3_BUCKET)),
 		Prefix: aws.String(dir),
@@ -94,7 +94,7 @@ func (svc *Service) GetFiles(dir string) (model.ProjectFiles, error) {
 		return nil, err
 	}
 
-	files := make(model.ProjectFiles)
+	files := make(map[string]string)
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -155,7 +155,7 @@ func (svc *Service) GetFile(path string) (string, error) {
 }
 
 /*
-DeleteDir deletes all the files in a project in s3.
+DeleteDir deletes all the files in a directory in s3.
 */
 func (svc *Service) DeleteDir(dir string) error {
 	res, err := svc.s3.ListObjects(&s3.ListObjectsInput{
