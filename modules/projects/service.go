@@ -69,12 +69,7 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	modFile, err := model.GetFileContent(proj.Files, "go.mod")
-	if err != nil {
-		return "", err
-	}
-
-	wasm, err := compileProject(mainFile, modFile)
+	wasm, err := compileProject(mainFile)
 
 	if err != nil {
 		return "", err

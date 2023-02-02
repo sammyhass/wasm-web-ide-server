@@ -86,10 +86,7 @@ func (r *repository) createProject(
 
 // createProjectFiles creates the default files for a project in s3
 func (r *repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
-	goMod := model.DefaultGoMod(project.Name)
 	files := model.DefaultFiles
-
-	files["go.mod"] = goMod
 
 	srcDir := getProjectSrcDir(project.UserID, project.ID)
 
@@ -141,12 +138,7 @@ func (r *repository) getProjectByID(userId string, id string) (model.ProjectView
 		return model.ProjectView{}, err
 	}
 
-	wasmUrl, err := r.genProjectWasmPresignedURL(userId, id)
-	if err != nil {
-		return model.ProjectView{}, err
-	}
-
-	return project.ViewWith(wasmUrl, files), nil
+	return project.ViewWithFiles(files), nil
 }
 
 /*

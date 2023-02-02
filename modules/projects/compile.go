@@ -11,10 +11,10 @@ import (
 	"strings"
 )
 
-func createTempCodeDir(code string, goMod string) (string, error, func()) {
+func createTempCodeDir(code string) (string, func(), error) {
 	tmpDir, err := os.MkdirTemp("", "project-dir-*")
 	if err != nil {
-		return "", err, nil
+		return "", nil, err
 	}
 
 	deleteDir := func() {
@@ -28,49 +28,24 @@ func createTempCodeDir(code string, goMod string) (string, error, func()) {
 	codeFile, err := createInTemp("main.go")
 	if err != nil {
 		deleteDir()
-		return "", err, nil
+		return "", nil, err
 	}
 
 	if _, err := codeFile.Write([]byte(code)); err != nil {
 		deleteDir()
-		return "", err, nil
+		return "", nil, err
 	}
 
-	goModFile, err := createInTemp("go.mod")
-	if err != nil {
-		deleteDir()
-		return "", err, nil
-	}
-	if _, err := goModFile.Write([]byte(goMod)); err != nil {
-		deleteDir()
-		return "", err, nil
-	}
-
-	return tmpDir, nil, deleteDir
-}
-
-// installDeps runs go get -d ./... in the given directory to install dependencies
-func installDeps(dir string) error {
-	cmd := exec.Command("go", "get", "-d", "./...")
-	cmd.Dir = dir
-
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%v", stderr.String())
-	}
-
-	return nil
+	return tmpDir, deleteDir, nil
 }
 
 /*
 compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a
 reader to the compiled wasm file
 */
-func compileProject(code string, goMod string) (io.Reader, error) {
+func compileProject(code string) (io.Reader, error) {
 
-	dir, err, deleteDir := createTempCodeDir(code, goMod)
+	dir, deleteDir, err := createTempCodeDir(code)
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +53,6 @@ func compileProject(code string, goMod string) (io.Reader, error) {
 
 	filename := "main.go"
 	out := "main.wasm"
-
-	if err := installDeps(dir); err != nil {
-		return nil, err
-	}
 
 	cmd := exec.Command("tinygo", "build", "-o", out, "-target", "wasm", filename)
 	cmd.Dir = dir
