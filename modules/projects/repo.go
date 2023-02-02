@@ -41,13 +41,12 @@ type projectsRepo interface {
 	deleteProject(userId string, id string) error
 	deleteProjectFiles(userId string, id string) error
 
-	updateProjectSrcFiles(userId string, id string, files model.ProjectFiles) (model.ProjectFiles, error)
-
+	uploadProjectSrcFiles(userId string, id string, files model.ProjectFiles) (model.ProjectFiles, error)
 	uploadProjectWasm(userId string, id string, r io.Reader) error
-
-	genSrcPresignedURL(userId string, id string, filename string) (string, error)
+	uploadProjectWat(userId string, id string, r io.Reader) error
 
 	genProjectWasmPresignedURL(userId string, id string) (string, error)
+	genProjectWatPresignedURL(userId string, id string) (string, error)
 }
 
 type repository struct {
@@ -182,7 +181,7 @@ func (r *repository) deleteProjectFiles(userId string, id string) error {
 /*
 updateProjectFiles updates the files for a given project in s3
 */
-func (r *repository) updateProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
+func (r *repository) uploadProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
 	model.ProjectFiles,
 	error,
 ) {
@@ -195,14 +194,18 @@ func (r *repository) updateProjectSrcFiles(userId string, id string, files model
 	return files, nil
 }
 
-func (r *repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
+func (r *repository) uploadBuildFile(userId string, id string, name string, file io.Reader) error {
 	wasmDir := getProjectWasmDir(userId, id)
-	_, err := r.s3.Upload(wasmDir, "main.wasm", file)
+	_, err := r.s3.Upload(wasmDir, name, file)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
+	return r.uploadBuildFile(userId, id, "main.wasm", file)
 }
 
 func (r *repository) genProjectWasmPresignedURL(userId string, id string) (string, error) {
@@ -215,10 +218,13 @@ func (r *repository) genProjectWasmPresignedURL(userId string, id string) (strin
 	return url, nil
 }
 
-/* genSrcPresignedURL generates a presigned url for a source file in a project (not wasm) */
-func (r *repository) genSrcPresignedURL(userId string, id string, filename string) (string, error) {
-	srcDir := getProjectSrcDir(userId, id)
-	url, err := r.s3.GenPresignedURL(path.Join(srcDir, filename), time.Hour*24*7)
+func (r *repository) uploadProjectWat(userId string, id string, file io.Reader) error {
+	return r.uploadBuildFile(userId, id, "main.wat", file)
+}
+
+func (r *repository) genProjectWatPresignedURL(userId string, id string) (string, error) {
+	wasmDir := getProjectWasmDir(userId, id)
+	url, err := r.s3.GenPresignedURL(path.Join(wasmDir, "main.wat"), time.Hour*24*7)
 	if err != nil {
 		return "", err
 	}

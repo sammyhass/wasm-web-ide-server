@@ -21,4 +21,3 @@ func main() {
 	router.Run(env.Get(env.PORT))
 
 }
-

@@ -1,6 +1,8 @@
 package projects
 
 import (
+	"strings"
+
 	"github.com/sammyhass/web-ide/server/modules/model"
 )
 
@@ -74,6 +76,17 @@ func (s *service) compileProjectWASM(
 	if err != nil {
 		return "", err
 	}
+	go func() {
+		wat, err := wasm2wat(wasm)
+
+		if err != nil {
+			return
+		}
+
+		r := strings.NewReader(wat)
+
+		s.repo.uploadProjectWat(userId, projectId, r)
+	}()
 
 	if err = s.repo.uploadProjectWasm(userId, projectId, wasm); err != nil {
 		return "", err
@@ -90,5 +103,9 @@ func (s *service) updateProjectFiles(
 	model.ProjectFiles,
 	error,
 ) {
-	return s.repo.updateProjectSrcFiles(userId, projectId, files)
+	return s.repo.uploadProjectSrcFiles(userId, projectId, files)
+}
+
+func (s *service) genProjectWatPresignedURL(userId, projectId string) (string, error) {
+	return s.repo.genProjectWatPresignedURL(userId, projectId)
 }

@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -136,8 +137,7 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 	return files, nil
 }
 
-func (svc *Service) GetFile(path string) (string, error) {
-
+func (svc *Service) Get(path string) (io.Reader, error) {
 	downloader := s3manager.NewDownloader(currentSession)
 
 	buf := aws.NewWriteAtBuffer([]byte{})
@@ -148,10 +148,29 @@ func (svc *Service) GetFile(path string) (string, error) {
 	})
 
 	if err != nil {
+		return nil, err
+	}
+
+	r := bytes.NewReader(buf.Bytes())
+
+	return r, nil
+}
+
+func (svc *Service) GetFile(path string) (string, error) {
+
+	r, err := svc.Get(path)
+
+	if err != nil {
 		return "", err
 	}
 
-	return string(buf.Bytes()), nil
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(r)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
 
 /*

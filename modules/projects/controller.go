@@ -26,6 +26,7 @@ func (c *controller) Routes(
 	group.DELETE("/:id", auth.Protected(c.deleteProject))
 	group.PATCH("/:id", auth.Protected(c.updateProject))
 	group.POST("/:id/compile", auth.Protected(c.compileProjectToWasm))
+	group.GET("/:id/wat", auth.Protected(c.getProjectWat))
 
 }
 
@@ -136,4 +137,18 @@ func (c *controller) compileProjectToWasm(
 	}
 
 	ctx.JSON(200, path)
+}
+
+func (c *controller) getProjectWat(
+	ctx *gin.Context,
+	uuid string,
+) {
+	wat, err := c.service.genProjectWatPresignedURL(uuid, ctx.Param("id"))
+
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(200, wat)
 }

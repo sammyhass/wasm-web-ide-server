@@ -11,6 +11,7 @@ COPY . ./
 
 ## Run tinygo install script
 RUN bash ./scripts/install-tinygo.sh
+RUN bash ./scripts/install-wabt.sh
 
 RUN go build -o /ide-server
 
