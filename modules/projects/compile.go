@@ -54,7 +54,7 @@ func compileProject(code string) (io.Reader, error) {
 	filename := "main.go"
 	out := "main.wasm"
 
-	cmd := exec.Command("tinygo", "build", "-o", out, "-target", "wasm", filename)
+	cmd := exec.Command("tinygo", "build", "-o", out, "-no-debug", "-target", "wasm", filename)
 	cmd.Dir = dir
 
 	var stderr bytes.Buffer
