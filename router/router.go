@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gin-contrib/cors"
@@ -75,19 +76,21 @@ func (r *router) Middleware() {
 }
 
 func (r *router) useCORS() {
+	allowedHeaders := []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
+		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent", "Pragma"}
+
 	corsOrigin := env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")
 
-	config := cors.DefaultConfig()
-
-	config.AllowOrigins = []string{corsOrigin}
-	config.AddAllowHeaders("Authorization")
-	config.AllowCredentials = true
-
-	if err := config.Validate(); err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println("CORS origin:", corsOrigin)
 
 	r.Engine.Use(
-		cors.New(config),
+		cors.New(
+			cors.Config{
+				AllowOrigins:     []string{corsOrigin},
+				AllowCredentials: true,
+				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+				AllowHeaders:     allowedHeaders,
+			},
+		),
 	)
 }

@@ -11,9 +11,9 @@ COPY . ./
 RUN bash ./scripts/install-tinygo.sh
 RUN bash ./scripts/install-wabt.sh
 
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /api
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o=./api
 
 ENV PORT 8080
 EXPOSE $PORT
 
-CMD ["/api", "serve"]
+CMD ["./api", "serve"]
