@@ -67,6 +67,7 @@ func (r *router) routes() {
 
 // Middleware should be used to register all middleware for the router
 func (r *router) Middleware() {
+
 	r.useCORS()
 
 	r.Engine.Use(middleware.ErrorHandler)
@@ -74,17 +75,19 @@ func (r *router) Middleware() {
 }
 
 func (r *router) useCORS() {
-	allowedHeaders := []string{"Origin", "Content-Length", "Content-Type", "Authorization", "User-Agent", "Referer", "Cache-Control", "X-Requested-With",
-		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent", "Pragma"}
+	corsOrigin := env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")
+
+	config := cors.DefaultConfig()
+
+	config.AllowOrigins = []string{corsOrigin}
+	config.AddAllowHeaders("Authorization")
+	config.AllowCredentials = true
+
+	if err := config.Validate(); err != nil {
+		log.Fatal(err)
+	}
 
 	r.Engine.Use(
-		cors.New(
-			cors.Config{
-				AllowOrigins:     []string{env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")},
-				AllowCredentials: true,
-				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-				AllowHeaders:     allowedHeaders,
-			},
-		),
+		cors.New(config),
 	)
 }
