@@ -1,7 +1,6 @@
 package env
 
 import (
-	"errors"
 	"log"
 	"os"
 	"strings"
@@ -10,9 +9,6 @@ import (
 )
 
 var env map[EnvKey]string
-
-var errMissingKey = errors.New("missing required env key: %s")
-var errInvalidKey = errors.New("invalid env key: %s")
 
 /*
 Get a key from the environment
