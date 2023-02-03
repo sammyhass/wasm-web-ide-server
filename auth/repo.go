@@ -2,8 +2,8 @@ package auth
 
 import (
 	"github.com/google/uuid"
-	"github.com/sammyhass/web-ide/server/modules/db"
-	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/db"
+	"github.com/sammyhass/web-ide/server/model"
 	"gorm.io/gorm"
 )
 

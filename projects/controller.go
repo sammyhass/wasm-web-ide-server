@@ -2,8 +2,8 @@ package projects
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sammyhass/web-ide/server/modules/auth"
-	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/auth"
+	"github.com/sammyhass/web-ide/server/model"
 )
 
 type controller struct {

@@ -3,7 +3,7 @@ package projects
 import (
 	"strings"
 
-	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/model"
 )
 
 type service struct {

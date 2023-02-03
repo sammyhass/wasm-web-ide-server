@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/sammyhass/web-ide/server/modules/auth"
-	"github.com/sammyhass/web-ide/server/modules/projects"
+	"github.com/sammyhass/web-ide/server/auth"
+	"github.com/sammyhass/web-ide/server/projects"
 )
 
 func Run(

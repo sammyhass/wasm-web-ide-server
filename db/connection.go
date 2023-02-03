@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/sammyhass/web-ide/server/modules/env"
+	"github.com/sammyhass/web-ide/server/env"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -41,6 +41,7 @@ func Connect() {
 }
 
 func GetConnection() *gorm.DB {
+
 	if db == nil {
 		Connect()
 	}

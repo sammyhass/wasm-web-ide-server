@@ -16,8 +16,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/sammyhass/web-ide/server/modules/env"
-	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/env"
+	"github.com/sammyhass/web-ide/server/model"
 )
 
 var currentSession *session.Session

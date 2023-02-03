@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 
-	"github.com/sammyhass/web-ide/server/modules/model"
+	"github.com/sammyhass/web-ide/server/model"
 	"golang.org/x/crypto/bcrypt"
 )
 

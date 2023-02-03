@@ -6,8 +6,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"github.com/sammyhass/web-ide/server/modules/env"
-	"github.com/sammyhass/web-ide/server/modules/router/middleware"
+	"github.com/sammyhass/web-ide/server/env"
+	"github.com/sammyhass/web-ide/server/router/middleware"
 )
 
 // controller should be implemented by all controllers in order to register their routes with the gin engine

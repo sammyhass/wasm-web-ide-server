@@ -13,8 +13,8 @@ COPY . ./
 RUN bash ./scripts/install-tinygo.sh
 RUN bash ./scripts/install-wabt.sh
 
-RUN go build -o /ide-server
+RUN go build -o /api
 
 EXPOSE $PORT
 
-CMD [ "/ide-server" ]
+CMD ["/api"]

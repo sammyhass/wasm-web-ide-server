@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/sammyhass/web-ide/server/modules/env"
+	"github.com/sammyhass/web-ide/server/env"
 )
 
 func generateJWTFromUser(

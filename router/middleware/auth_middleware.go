@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sammyhass/web-ide/server/modules/auth"
+	"github.com/sammyhass/web-ide/server/auth"
 )
 
 // AuthMiddleware will add the user_id to the context if the user is authenticated
