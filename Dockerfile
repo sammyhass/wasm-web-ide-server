@@ -1,7 +1,5 @@
 FROM amd64/golang:1.19.2-bullseye
 
-ENV PORT 8080
-
 WORKDIR /app
 
 COPY go.mod .
@@ -13,8 +11,9 @@ COPY . ./
 RUN bash ./scripts/install-tinygo.sh
 RUN bash ./scripts/install-wabt.sh
 
-RUN go build -o /api
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /api
 
+ENV PORT 8080
 EXPOSE $PORT
 
-CMD ["/api"]
+CMD ["/api", "serve"]

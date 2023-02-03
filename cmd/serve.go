@@ -11,7 +11,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	serveCmd.Flags().StringP("port", "p", "8080", "Port to run the server on")
+	serveCmd.Flags().StringP("port", "p", "8080", "Port to run the server on, overrides the PORT env var")
 }
 
 var serveCmd = &cobra.Command{
@@ -20,6 +20,7 @@ var serveCmd = &cobra.Command{
 	Long:  "Start serving the API on the specified port",
 	Run: func(cmd *cobra.Command, args []string) {
 		port, _ := cmd.Flags().GetString("port")
+
 		startServer(port)
 	},
 }

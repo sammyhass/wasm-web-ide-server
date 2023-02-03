@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "api",
-	Short: "Tools for the WASM IDE API",
+	Short: "CLI tools for the WASM web-ide API",
 	Run: func(cmd *cobra.Command, args []string) {
-		color.Green("Run `api help` for usage, running `api serve` by default")
-		serveCmd.Run(cmd, args)
+		cmd.Help()
 	},
 }
 
