@@ -100,7 +100,7 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	var errs []error
+	var errs chan error
 
 	wg.Add(len(res.Contents))
 
@@ -111,7 +111,7 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 			content, err := svc.GetFile(*obj.Key)
 
 			if err != nil {
-				errs = append(errs, err)
+				errs <- err
 				return
 			}
 
@@ -130,8 +130,10 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 
 	wg.Wait()
 
-	if len(errs) > 0 {
-		return nil, errs[0]
+	for err := range errs {
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return files, nil
@@ -187,26 +189,32 @@ func (svc *Service) DeleteDir(dir string) error {
 	}
 
 	var wg sync.WaitGroup
+	var errs chan error
 
 	wg.Add(len(res.Contents))
 
 	for _, obj := range res.Contents {
 		go func(obj *s3.Object) {
 			defer wg.Done()
-			_, err := svc.s3.DeleteObject(
+			if _, err := svc.s3.DeleteObject(
 				&s3.DeleteObjectInput{
 					Bucket: aws.String(env.Get(env.S3_BUCKET)),
 					Key:    obj.Key,
 				},
-			)
-
-			if err != nil {
-				log.Println(err)
+			); err != nil {
+				errs <- err
 			}
 		}(obj)
 	}
 
 	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
