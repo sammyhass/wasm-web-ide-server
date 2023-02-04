@@ -228,10 +228,8 @@ func (svc *Service) UploadFiles(dir string, files model.ProjectFiles) error {
 		}(name, content)
 	}
 
-	go func() {
-		wg.Wait()
-		close(errs)
-	}()
+	wg.Wait()
+	close(errs)
 
 	for err := range errs {
 		if err != nil {

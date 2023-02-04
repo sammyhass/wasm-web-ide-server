@@ -13,6 +13,7 @@ func Run(
 	router.useController("/auth", auth.NewController())
 	router.useController("/projects", projects.NewController())
 
+	router.middleware()
 	router.routes()
 
 	router.run(port)

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/gin-contrib/cors"
@@ -58,16 +57,14 @@ func (r *router) run(port string) {
 
 // routes runs the routes function for each controller with a router group
 func (r *router) routes() {
-	r.Middleware()
-
 	for name, controller := range r.controllers {
 		group := r.Engine.Group(name)
 		controller.Routes(group)
 	}
 }
 
-// Middleware should be used to register all middleware for the router
-func (r *router) Middleware() {
+// middleware should be used to register all middleware for the router
+func (r *router) middleware() {
 
 	r.useCORS()
 
@@ -80,8 +77,6 @@ func (r *router) useCORS() {
 		"Access-Control-Request-Headers", "Access-Control-Request-Method", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User", "Host", "Connection", "Upgrade-Insecure-Requests", "Cache-Control", "Accept", "Accept-Encoding", "Accept-Language", "User-Agent", "Pragma"}
 
 	corsOrigin := env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")
-
-	fmt.Println("CORS origin:", corsOrigin)
 
 	r.Engine.Use(
 		cors.New(
