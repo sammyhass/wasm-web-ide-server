@@ -100,7 +100,7 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	var errs chan error
+	errs := make(chan error)
 
 	wg.Add(len(res.Contents))
 
@@ -129,6 +129,7 @@ func (svc *Service) GetFiles(dir string) (map[string]string, error) {
 	}
 
 	wg.Wait()
+	close(errs)
 
 	for err := range errs {
 		if err != nil {
@@ -189,7 +190,7 @@ func (svc *Service) DeleteDir(dir string) error {
 	}
 
 	var wg sync.WaitGroup
-	var errs chan error
+	errs := make(chan error)
 
 	wg.Add(len(res.Contents))
 
