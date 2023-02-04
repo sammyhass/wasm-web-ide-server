@@ -16,7 +16,7 @@ type controller interface {
 	Routes(e *gin.RouterGroup)
 }
 
-// router is a wrapper around the gin.Engine that allows for the registration of RouterGroup
+// router is a wrapper around the gin.Engine that allows for the registration of controllers
 type router struct {
 	Engine *gin.Engine
 
