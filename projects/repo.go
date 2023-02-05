@@ -57,7 +57,7 @@ type repository struct {
 func NewProjectsRepository() *repository {
 	return &repository{
 		db: db.GetConnection(),
-		s3: s3.NewS3Service(),
+		s3: s3.NewService(),
 	}
 }
 

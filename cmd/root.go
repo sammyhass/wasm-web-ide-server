@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "api",
+	Use:   "api [command]",
 	Short: "CLI tools for the WASM web-ide API",
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()

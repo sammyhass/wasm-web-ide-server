@@ -44,7 +44,7 @@ type Service struct {
 	s3       *s3.S3
 }
 
-func NewS3Service() *Service {
+func NewService() *Service {
 	return &Service{
 		uploader: s3manager.NewUploader(currentSession),
 		s3:       s3.New(currentSession),
