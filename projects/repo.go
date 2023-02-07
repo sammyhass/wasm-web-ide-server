@@ -38,6 +38,7 @@ type projectsRepo interface {
 	getProjectsByUserID(userID string) ([]model.ProjectView, error)
 	getProjectByID(userId string, id string) (model.ProjectView, error)
 
+	renameProject(userId string, id string, name string) (model.ProjectView, error)
 	deleteProject(userId string, id string) error
 	deleteProjectFiles(userId string, id string) error
 
@@ -115,13 +116,31 @@ func (r *repository) getProjectsByUserID(userID string) ([]model.ProjectView, er
 	return out, nil
 }
 
-/*
-getProjectByID returns a project for a given user with the given id returning the database record and the files in s3
-*/
-func (r *repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
+func (r *repository) getProjectRecord(
+	userId string,
+	id string,
+) (model.Project, error) {
 	var project model.Project
 
 	err := r.db.Where("id = ?", id).First(&project).Error
+
+	if err != nil {
+		return model.Project{}, err
+	}
+
+	if project.UserID != userId {
+		return model.Project{}, errors.New("project not found")
+	}
+
+	return project, nil
+}
+
+/*
+getProjectByID returns a project for a given user with the given id returning the view of the database record and the files in s3
+*/
+func (r *repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
+
+	project, err := r.getProjectRecord(userId, id)
 
 	if err != nil {
 		return model.ProjectView{}, err
@@ -230,4 +249,22 @@ func (r *repository) genProjectWatPresignedURL(userId string, id string) (string
 	}
 
 	return url, nil
+}
+
+func (r *repository) renameProject(
+	userId, id, name string,
+) (model.ProjectView, error) {
+
+	p, err := r.getProjectRecord(userId, id)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	p.Name = name
+
+	if err := r.db.Save(&p).Error; err != nil {
+		return model.ProjectView{}, err
+	}
+
+	return p.View(), nil
 }

@@ -7,6 +7,7 @@ import (
 )
 
 func SetUserToContext(ctx *gin.Context, userID string) {
+
 	ctx.Set("user_id", userID)
 }
 

@@ -109,3 +109,7 @@ func (s *service) updateProjectFiles(
 func (s *service) genProjectWatPresignedURL(userId, projectId string) (string, error) {
 	return s.repo.genProjectWatPresignedURL(userId, projectId)
 }
+
+func (s *service) renameProject(userId, id, name string) (model.ProjectView, error) {
+	return s.repo.renameProject(userId, id, name)
+}

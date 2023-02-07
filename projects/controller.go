@@ -28,6 +28,8 @@ func (c *controller) Routes(
 	group.POST("/:id/compile", auth.Protected(c.compileProjectToWasm))
 	group.GET("/:id/wat", auth.Protected(c.getProjectWat))
 
+	group.PATCH("/:id/rename", auth.Protected(c.renameProject))
+
 }
 
 type newProjectDto struct {
@@ -151,4 +153,30 @@ func (c *controller) getProjectWat(
 	}
 
 	ctx.JSON(200, wat)
+}
+
+type renameProjectDto struct {
+	Name string `json:"name"`
+}
+
+func (c *controller) renameProject(
+	ctx *gin.Context,
+	uuid string,
+) {
+	id := ctx.Param("id")
+
+	var dto renameProjectDto
+
+	if err := ctx.ShouldBindJSON(&dto); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if p, err := c.service.renameProject(uuid, id, dto.Name); err != nil {
+		ctx.Error(err)
+		return
+	} else {
+		ctx.JSON(200, p)
+	}
+
 }
