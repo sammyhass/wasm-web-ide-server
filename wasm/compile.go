@@ -43,13 +43,12 @@ func createTempCodeDir(code string) (string, func(), error) {
 compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a
 reader to the compiled wasm file
 */
-func Compile(code string) (io.Reader, error) {
+func Compile(code string) (io.Reader, func(), error) {
 
 	dir, deleteDir, err := createTempCodeDir(code)
 	if err != nil {
-		return nil, err
+		return nil, func() {}, err
 	}
-	defer deleteDir()
 
 	filename := "main.go"
 	out := "main.wasm"
@@ -71,17 +70,23 @@ func Compile(code string) (io.Reader, error) {
 		}
 
 		if len(errs) > 0 {
-			return nil, errors.New(strings.Join(errs, "\n"))
+			return nil, deleteDir, errors.New(strings.Join(errs, "\n"))
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("%v", stderr.String())
+			return nil, deleteDir, fmt.Errorf("%v", stderr.String())
 		}
 	}
 
 	stripWasm(path.Join(dir, out))
 
-	return os.Open(path.Join(dir, out))
+	wasmFile, err := os.Open(path.Join(dir, out))
+
+	if err != nil {
+		return nil, deleteDir, err
+	}
+
+	return wasmFile, deleteDir, nil
 
 }
 

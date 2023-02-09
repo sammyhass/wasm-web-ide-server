@@ -72,10 +72,11 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	compiled, err := wasm.Compile(mainFile)
+	compiled, del, err := wasm.Compile(mainFile)
 	if err != nil {
 		return "", err
 	}
+	defer del()
 
 	if err = s.repo.uploadProjectWasm(userId, projectId, compiled); err != nil {
 		return "", err
