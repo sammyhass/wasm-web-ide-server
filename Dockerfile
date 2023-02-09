@@ -8,9 +8,15 @@ COPY go.sum .
 COPY . ./
 
 ## Run tinygo install script
-RUN bash ./scripts/install-tinygo.sh
-RUN bash ./scripts/install-wabt.sh
+RUN wget https://github.com/tinygo-org/tinygo/releases/download/v0.26.0/tinygo_0.26.0_amd64.deb && \
+	dpkg -i tinygo_0.26.0_amd64.deb && \
+	rm tinygo_0.26.0_amd64.deb && \
+	tinygo version
+
+RUN apt-get update && \
+	apt-get install wabt
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o=./api
+
 
 CMD ["./api", "serve"]

@@ -3,6 +3,7 @@ package wasm
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -37,11 +38,18 @@ func createTempCodeDir(code string) (string, func(), error) {
 	return tmpDir, deleteDir, nil
 }
 
+func Compile(code string) ([]byte, error) {
+	return CompileWithOpts(code, CompileOpts{})
+}
+
+type CompileOpts struct {
+	BeforeDelete func(wasm *os.File) error // BeforeDelete is called before the temp directory is deleted, it is passed the compiled WASM file
+}
+
 /*
-compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a
-reader to the compiled wasm file
+compileProject takes a string of Go code  and compiles it to WASM
 */
-func Compile(code string) (*os.File, error) {
+func CompileWithOpts(code string, opts CompileOpts) ([]byte, error) {
 
 	dir, deleteDir, err := createTempCodeDir(code)
 	if err != nil {
@@ -55,8 +63,7 @@ func Compile(code string) (*os.File, error) {
 	cmd := exec.Command("tinygo", "build", "-o", out, "-target", "wasm", filename)
 	cmd.Dir = dir
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	stderr := bytes.Buffer{}
 
 	if err := cmd.Run(); err != nil {
 		if err != nil {
@@ -67,20 +74,32 @@ func Compile(code string) (*os.File, error) {
 		}
 	}
 
-	if err = stripWasm(path.Join(dir, out)); err != nil {
+	f, err := os.Open(path.Join(dir, out))
+	if err != nil {
 		return nil, err
 	}
 
-	return os.Open(path.Join(dir, out))
+	defer f.Close()
+
+	if opts.BeforeDelete != nil {
+		if err := opts.BeforeDelete(f); err != nil {
+			return nil, err
+		}
+	}
+
+	bytes, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 
 }
 
-func stripWasm(
-	fname string,
+func StripWasm(
+	f *os.File,
 ) error {
-
-	cmd := exec.Command("wasm-strip", fname)
-
+	cmd := exec.Command("wasm-strip", f.Name())
 	if err := cmd.Run(); err != nil {
 		return err
 	}

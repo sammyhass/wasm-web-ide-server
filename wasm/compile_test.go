@@ -1,7 +1,9 @@
 package wasm
 
 import (
+	"bytes"
 	"io"
+	"os"
 	"testing"
 )
 
@@ -21,13 +23,11 @@ func main() {}`
 
 func TestCompile_WorksWithValidGoFile(t *testing.T) {
 
-	wasm, err := Compile(src)
+	bytes, err := Compile(src)
 
 	if err != nil {
 		t.Error(err)
 	}
-
-	bytes, err := io.ReadAll(wasm)
 
 	if err != nil {
 		t.Error(err)
@@ -44,4 +44,40 @@ func TestCompile_ReturnsErrorWithInvalidGoFile(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
+}
+
+func TestStripWASM(
+	t *testing.T,
+) {
+	wasm, err := Compile(src)
+	if err != nil {
+		t.Error(err)
+	}
+
+	f, err := os.CreateTemp("", "wasm-strip-*.wasm")
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Remove(f.Name())
+
+	_, err = io.Copy(f, bytes.NewReader(wasm))
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err = StripWasm(f); err != nil {
+		t.Errorf("Expected no error, got %s", err)
+	}
+
+	stat, err := f.Stat()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if stat.Size() > int64(len(wasm)) {
+		t.Errorf("Expected new file size to be smaller or equal to original, got %d", stat.Size())
+	}
+
+	t.Logf("Original size: %d, new size: %d", len(wasm), stat.Size())
+
 }

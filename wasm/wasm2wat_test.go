@@ -1,6 +1,10 @@
 package wasm
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
 
 func TestWasm2Wat(t *testing.T) {
 
@@ -10,7 +14,7 @@ func TestWasm2Wat(t *testing.T) {
 		t.Error(err)
 	}
 
-	wat, err := WasmToWat(wasm)
+	wat, err := WasmToWat(bytes.NewReader(wasm))
 
 	if err != nil {
 		t.Error(err)
@@ -18,6 +22,14 @@ func TestWasm2Wat(t *testing.T) {
 
 	if wat == "" {
 		t.Error("Expected wat to be non-empty")
+	}
+
+	if !strings.Contains(wat, "add") {
+		t.Error("Expected wat to contain 'add'")
+	}
+
+	if !strings.Contains(wat, "sub") {
+		t.Error("Expected wat to contain 'sub'")
 	}
 
 }

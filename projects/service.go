@@ -1,6 +1,8 @@
 package projects
 
 import (
+	"bytes"
+	"os"
 	"strings"
 
 	"github.com/sammyhass/web-ide/server/model"
@@ -72,16 +74,26 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	compiled, err := wasm.Compile(mainFile)
+	compiled, err := wasm.CompileWithOpts(mainFile, wasm.CompileOpts{
+		BeforeDelete: func(f *os.File) error {
+			err := wasm.StripWasm(f)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+	})
+
 	if err != nil {
 		return "", err
 	}
 
-	if err = s.repo.uploadProjectWasm(userId, projectId, compiled); err != nil {
+	wasmReader := bytes.NewReader(compiled)
+	if err = s.repo.uploadProjectWasm(userId, projectId, wasmReader); err != nil {
 		return "", err
 	}
 
-	wat, err := wasm.WasmToWat(compiled)
+	wat, err := wasm.WasmToWat(wasmReader)
 	if err != nil {
 		return "", err
 	}
