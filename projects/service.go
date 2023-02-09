@@ -85,10 +85,10 @@ func (s *service) compileProjectWASM(
 	if err != nil {
 		return "", err
 	}
-	r := strings.NewReader(wat)
-	e := s.repo.uploadProjectWat(userId, projectId, r)
-	if e != nil {
-		return "", e
+
+	watReader := strings.NewReader(wat)
+	if err = s.repo.uploadProjectWat(userId, projectId, watReader); err != nil {
+		return "", err
 	}
 
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)

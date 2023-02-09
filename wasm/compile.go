@@ -2,7 +2,6 @@ package wasm
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -59,26 +58,18 @@ func Compile(code string) (*os.File, error) {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	var errs []string
-
 	if err := cmd.Run(); err != nil {
-		for _, line := range strings.Split(stderr.String(), "\n") {
-			hasFileName := strings.Contains(line, filename)
-			if hasFileName {
-				errs = append(errs, line)
-			}
-		}
-
-		if len(errs) > 0 {
-			return nil, errors.New(strings.Join(errs, "\n"))
-		}
-
 		if err != nil {
-			return nil, fmt.Errorf("%v", stderr.String())
+			str := stderr.String()
+			str = strings.Replace(str, dir, "", -1)
+
+			return nil, fmt.Errorf("error compiling: %s", str)
 		}
 	}
 
-	stripWasm(path.Join(dir, out))
+	if err = stripWasm(path.Join(dir, out)); err != nil {
+		return nil, err
+	}
 
 	return os.Open(path.Join(dir, out))
 
