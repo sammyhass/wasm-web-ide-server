@@ -17,9 +17,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Install TinyGo
-        run: bash ./scripts/install-tinygo.sh
+        run: sudo bash ./scripts/install-tinygo.sh
       - name: Install WABT
-        run: bash ./scripts/install-wabt.sh
+        run: sudo bash ./scripts/install-wabt.sh
       - name: Build
         run: go build -v ./...
 
