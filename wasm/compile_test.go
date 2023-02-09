@@ -21,11 +21,11 @@ func main() {}`
 
 func TestCompile_WorksWithValidGoFile(t *testing.T) {
 
-	wasm, del, err := Compile(src)
+	wasm, err := Compile(src)
+
 	if err != nil {
 		t.Error(err)
 	}
-	defer del()
 
 	bytes, err := io.ReadAll(wasm)
 
@@ -39,8 +39,7 @@ func TestCompile_WorksWithValidGoFile(t *testing.T) {
 }
 
 func TestCompile_ReturnsErrorWithInvalidGoFile(t *testing.T) {
-	_, delete, err := Compile("package main")
-	defer delete()
+	_, err := Compile("package main")
 
 	if err == nil {
 		t.Error("Expected error, got nil")

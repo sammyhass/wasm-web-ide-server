@@ -4,11 +4,11 @@ import "testing"
 
 func TestWasm2Wat(t *testing.T) {
 
-	wasm, del, err := Compile(src)
+	wasm, err := Compile(src)
+
 	if err != nil {
 		t.Error(err)
 	}
-	defer del()
 
 	wat, err := WasmToWat(wasm)
 
