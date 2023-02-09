@@ -64,7 +64,6 @@ func (s *service) compileProjectWASM(
 ) (string, error) {
 
 	proj, err := s.repo.getProjectByID(userId, projectId)
-
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +82,6 @@ func (s *service) compileProjectWASM(
 			return nil
 		},
 	})
-
 	if err != nil {
 		return "", err
 	}

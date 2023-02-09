@@ -2,7 +2,7 @@ package wasm
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -64,13 +64,18 @@ func CompileWithOpts(code string, opts CompileOpts) ([]byte, error) {
 	cmd.Dir = dir
 
 	stderr := bytes.Buffer{}
+	cmd.Stderr = &stderr
 
+	errs := []string{}
 	if err := cmd.Run(); err != nil {
 		if err != nil {
-			str := stderr.String()
-			str = strings.Replace(str, dir, "", -1)
+			for _, line := range strings.Split(stderr.String(), "\n") {
+				if strings.Contains(line, filename) {
+					errs = append(errs, line)
+				}
+			}
 
-			return nil, fmt.Errorf("error compiling: %s", str)
+			return nil, errors.New(strings.Join(errs, "\n"))
 		}
 	}
 
@@ -100,10 +105,12 @@ func StripWasm(
 	f *os.File,
 ) error {
 	cmd := exec.Command("wasm-strip", f.Name())
+	stderr := bytes.Buffer{}
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return err
-	}
+		return errors.New(stderr.String())
 
+	}
 	return nil
 
 }
