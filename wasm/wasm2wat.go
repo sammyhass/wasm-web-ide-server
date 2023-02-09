@@ -1,4 +1,4 @@
-package projects
+package wasm
 
 import (
 	"io"
@@ -7,7 +7,7 @@ import (
 )
 
 // Convert a WASM reader to a WebAssembly Text Format (WAT) string
-func wasm2wat(wasmReader io.Reader) (string, error) {
+func WasmToWat(wasmReader io.Reader) (string, error) {
 	f, err := os.CreateTemp("", "wasm2wat-*.wasm")
 	if err != nil {
 		return "", err

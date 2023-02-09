@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/sammyhass/web-ide/server/model"
+	"github.com/sammyhass/web-ide/server/wasm"
 )
 
 type service struct {
@@ -71,25 +72,23 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	wasm, err := compileProject(mainFile)
-
+	compiled, err := wasm.Compile(mainFile)
 	if err != nil {
 		return "", err
 	}
-	go func() {
-		wat, err := wasm2wat(wasm)
 
-		if err != nil {
-			return
-		}
-
-		r := strings.NewReader(wat)
-
-		s.repo.uploadProjectWat(userId, projectId, r)
-	}()
-
-	if err = s.repo.uploadProjectWasm(userId, projectId, wasm); err != nil {
+	if err = s.repo.uploadProjectWasm(userId, projectId, compiled); err != nil {
 		return "", err
+	}
+
+	wat, err := wasm.WasmToWat(compiled)
+	if err != nil {
+		return "", err
+	}
+	r := strings.NewReader(wat)
+	e := s.repo.uploadProjectWat(userId, projectId, r)
+	if e != nil {
+		return "", e
 	}
 
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)
