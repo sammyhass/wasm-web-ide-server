@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -40,11 +39,9 @@ func createTempCodeDir(code string) (string, func(), error) {
 }
 
 /*
-compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a
-reader to the compiled wasm file
+compileProject takes a string of Go code and a string containing a go.mod file and compiles it to web assembly using tinygo, returning a reader to the compiled wasm file and a function to delete the temporary directory containing the compiled code.
 */
-func Compile(code string) (io.Reader, func(), error) {
-
+func Compile(code string) (*os.File, func(), error) {
 	dir, deleteDir, err := createTempCodeDir(code)
 	if err != nil {
 		return nil, func() {}, err
