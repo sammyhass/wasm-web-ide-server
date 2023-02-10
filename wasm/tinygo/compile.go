@@ -1,4 +1,4 @@
-package wasm
+package tinygo
 
 import (
 	"bytes"
@@ -8,35 +8,9 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+
+	"github.com/sammyhass/web-ide/server/wasm/util"
 )
-
-func createTempCodeDir(code string) (string, func(), error) {
-	tmpDir, err := os.MkdirTemp("", "project-dir-*")
-	if err != nil {
-		return "", nil, err
-	}
-
-	deleteDir := func() {
-		os.RemoveAll(tmpDir)
-	}
-
-	createInTemp := func(filename string) (*os.File, error) {
-		return os.Create(path.Join(tmpDir, filename))
-	}
-
-	codeFile, err := createInTemp("main.go")
-	if err != nil {
-		deleteDir()
-		return "", nil, err
-	}
-
-	if _, err := codeFile.Write([]byte(code)); err != nil {
-		deleteDir()
-		return "", nil, err
-	}
-
-	return tmpDir, deleteDir, nil
-}
 
 func Compile(code string) ([]byte, error) {
 	return compileWithOpts(code, compileOpts{})
@@ -51,7 +25,7 @@ compileProject takes a string of Go code  and compiles it to WASM
 */
 func compileWithOpts(code string, opts compileOpts) ([]byte, error) {
 
-	dir, deleteDir, err := createTempCodeDir(code)
+	dir, deleteDir, err := util.CreateTempCodeDir("main.go", code)
 	if err != nil {
 		return nil, err
 	}

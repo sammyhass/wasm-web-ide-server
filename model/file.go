@@ -52,27 +52,22 @@ var DefaultCss = `h1 {
 
 var DefaultJs = `console.log("Hello World")`
 
-var goModTemplate = `module %s
-go 1.19`
+var DefaultAssemblyScript = `export function add(a: i32, b: i32): i32 {
+	return a + b;
+}`
 
-func DefaultGoMod(projName string) string {
-	slug := strings.Map(func(r rune) rune {
-		if r == ' ' {
-			return '-'
-		}
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
-			return r
-		}
-		return -1
-	}, projName)
-	return fmt.Sprintf(goModTemplate, slug)
-}
-
-var DefaultFiles = ProjectFiles{
+var DefaultFilesGo = ProjectFiles{
 	"main.go":    DefaultGo,
 	"index.html": DefaultHtml,
 	"styles.css": DefaultCss,
 	"app.js":     DefaultJs,
+}
+
+var DefaultFilesAssemblyScript = ProjectFiles{
+	"index.html": DefaultHtml,
+	"styles.css": DefaultCss,
+	"app.js":     DefaultJs,
+	"main.ts":    DefaultAssemblyScript,
 }
 
 func GetFileContent(files []FileView, filename string) (string, error) {

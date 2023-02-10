@@ -2,11 +2,15 @@ package projects
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"sync"
 
 	"github.com/sammyhass/web-ide/server/model"
 	"github.com/sammyhass/web-ide/server/wasm"
+	"github.com/sammyhass/web-ide/server/wasm/assemblyscript"
+	"github.com/sammyhass/web-ide/server/wasm/tinygo"
+	"github.com/sammyhass/web-ide/server/wasm/util"
 )
 
 type service struct {
@@ -22,8 +26,9 @@ func newService() *service {
 func (s *service) createProject(
 	name string,
 	userID string,
+	language model.ProjectLanguage,
 ) (model.ProjectView, error) {
-	proj, err := s.repo.createProject(name, userID)
+	proj, err := s.repo.createProject(name, userID, language)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
@@ -68,12 +73,30 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	mainFile, err := model.GetFileContent(proj.Files, "main.go")
+	var fname string
+	switch proj.Language {
+	case model.LanguageAssemblyScript.String():
+		fname = "main.ts"
+	case model.LanguageGo.String():
+		fname = "main.go"
+	default:
+		return "", errors.New("unsupported language")
+	}
+
+	mainFile, err := model.GetFileContent(proj.Files, fname)
 	if err != nil {
 		return "", err
 	}
 
-	compiled, err := wasm.Compile(mainFile)
+	var res util.CompileResult
+	if lang := model.GetProjectLanguage(proj.Language); lang == model.LanguageAssemblyScript {
+		res, err = assemblyscript.Compile(mainFile)
+	} else if lang == model.LanguageGo {
+		res, err = s.compileProjectWasmWithGo(mainFile)
+	} else {
+		return "", errors.New("unsupported language")
+	}
+
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +105,7 @@ func (s *service) compileProjectWASM(
 	var uploadErrs []error
 
 	wg.Add(2)
-	wasmReader := bytes.NewReader(compiled)
+	wasmReader := bytes.NewReader(res.Wasm)
 
 	go func() {
 		defer wg.Done()
@@ -95,13 +118,11 @@ func (s *service) compileProjectWASM(
 
 	go func() {
 		defer wg.Done()
-		wat, err := wasm.WasmToWat(wasmReader)
 		if err != nil {
 			uploadErrs = append(uploadErrs, err)
 			return
 		}
-
-		watReader := strings.NewReader(wat)
+		watReader := strings.NewReader(res.Wat)
 		if err = s.repo.uploadProjectWat(userId, projectId, watReader); err != nil {
 			uploadErrs = append(uploadErrs, err)
 			return
@@ -115,6 +136,26 @@ func (s *service) compileProjectWASM(
 	}
 
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)
+}
+
+func (s *service) compileProjectWasmWithGo(
+	file string,
+) (util.CompileResult, error) {
+	var result util.CompileResult
+	compiled, err := tinygo.Compile(file)
+	if err != nil {
+		return result, err
+	}
+	result.Wasm = compiled
+
+	wat, err := wasm.WasmToWat(bytes.NewReader(compiled))
+	if err != nil {
+		return result, err
+	}
+
+	result.Wat = wat
+
+	return result, nil
 }
 
 func (s *service) updateProjectFiles(

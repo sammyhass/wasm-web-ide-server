@@ -27,13 +27,13 @@ func (c *controller) Routes(
 	group.PATCH("/:id", auth.Protected(c.updateProject))
 	group.POST("/:id/compile", auth.Protected(c.compileProjectToWasm))
 	group.GET("/:id/wat", auth.Protected(c.getProjectWat))
-
 	group.PATCH("/:id/rename", auth.Protected(c.renameProject))
 
 }
 
 type newProjectDto struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Language string `json:"language"`
 }
 
 func (c *controller) createProject(
@@ -47,7 +47,9 @@ func (c *controller) createProject(
 		return
 	}
 
-	proj, err := c.service.createProject(dto.Name, uuid)
+	lang := model.GetProjectLanguage(dto.Language)
+
+	proj, err := c.service.createProject(dto.Name, uuid, lang)
 
 	if err != nil {
 		ctx.Error(err)

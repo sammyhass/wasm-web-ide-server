@@ -31,6 +31,7 @@ type projectsRepo interface {
 	createProject(
 		name string,
 		userID string,
+		language model.ProjectLanguage,
 	) (model.Project, error)
 
 	createProjectFiles(project model.Project) (model.ProjectFiles, error)
@@ -68,11 +69,13 @@ createProject creates a new project in the database
 func (r *repository) createProject(
 	name string,
 	userID string,
+	language model.ProjectLanguage,
 ) (model.Project, error) {
 
 	proj := model.NewProject(
 		name,
 		userID,
+		language,
 	)
 
 	err := r.db.Create(&proj).Error
@@ -86,15 +89,25 @@ func (r *repository) createProject(
 
 // createProjectFiles creates the default files for a project in s3
 func (r *repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
-	files := model.DefaultFiles
-
 	srcDir := getProjectSrcDir(project.UserID, project.ID)
+
+	var files model.ProjectFiles
+	switch project.Language {
+	case model.LanguageGo:
+		files = model.DefaultFilesGo
+	case model.LanguageAssemblyScript:
+		files = model.DefaultFilesAssemblyScript
+	}
+
+	if files == nil {
+		return nil, errors.New("invalid project language")
+	}
 
 	if err := r.s3.UploadFiles(srcDir, files); err != nil {
 		return nil, err
 	}
 
-	return model.DefaultFiles, nil
+	return files, nil
 }
 
 /*
