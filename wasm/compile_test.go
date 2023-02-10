@@ -185,5 +185,4 @@ func TestStripWASM(
 	}
 
 	t.Logf("Original size: %d, new size: %d", len(wasm), stat.Size())
-
 }

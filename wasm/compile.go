@@ -104,13 +104,21 @@ func CompileWithOpts(code string, opts CompileOpts) ([]byte, error) {
 func StripWasm(
 	f *os.File,
 ) error {
+	if f == nil {
+		return errors.New("nil file")
+	}
+
 	cmd := exec.Command("wasm-strip", f.Name())
 	stderr := bytes.Buffer{}
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return errors.New(stderr.String())
+		if stderr.Len() > 0 {
+			return errors.New(stderr.String())
+		}
 
+		return err
 	}
+
 	return nil
 
 }

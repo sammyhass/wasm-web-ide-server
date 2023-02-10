@@ -24,7 +24,7 @@ func WasmToWat(wasmReader io.Reader) (string, error) {
 		return "", err
 	}
 
-	cmd := exec.Command("wasm2wat", f.Name(), "-o", watF.Name())
+	cmd := exec.Command("wasm2wat", "--enable-all", f.Name(), "-o", watF.Name())
 
 	if err := cmd.Run(); err != nil {
 		return "", err
