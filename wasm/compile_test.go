@@ -1,8 +1,6 @@
 package wasm
 
 import (
-	"bytes"
-	"io"
 	"os"
 	"testing"
 )
@@ -137,7 +135,7 @@ func TestCompile_ReturnsErrorWithInvalidGoFile(t *testing.T) {
 }
 
 func TestCompile_BeforeDelete(t *testing.T) {
-	_, err := CompileWithOpts(src, CompileOpts{
+	_, err := compileWithOpts(src, compileOpts{
 		BeforeDelete: func(f *os.File) error {
 			if _, err := os.Stat(f.Name()); err != nil {
 				t.Errorf("Expected file to exist, got %s", err)
@@ -150,39 +148,4 @@ func TestCompile_BeforeDelete(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-}
-
-func TestStripWASM(
-	t *testing.T,
-) {
-	wasm, err := Compile(src)
-	if err != nil {
-		t.Error(err)
-	}
-
-	f, err := os.CreateTemp("", "wasm-strip-*.wasm")
-	if err != nil {
-		t.Error(err)
-	}
-	defer os.Remove(f.Name())
-
-	_, err = io.Copy(f, bytes.NewReader(wasm))
-	if err != nil {
-		t.Error(err)
-	}
-
-	if err = StripWasm(f); err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
-
-	stat, err := f.Stat()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if stat.Size() > int64(len(wasm)) {
-		t.Errorf("Expected new file size to be smaller or equal to original, got %d", stat.Size())
-	}
-
-	t.Logf("Original size: %d, new size: %d", len(wasm), stat.Size())
 }

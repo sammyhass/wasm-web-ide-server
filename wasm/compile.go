@@ -39,17 +39,17 @@ func createTempCodeDir(code string) (string, func(), error) {
 }
 
 func Compile(code string) ([]byte, error) {
-	return CompileWithOpts(code, CompileOpts{})
+	return compileWithOpts(code, compileOpts{})
 }
 
-type CompileOpts struct {
+type compileOpts struct {
 	BeforeDelete func(wasm *os.File) error // BeforeDelete is called before the temp directory is deleted, it is passed the compiled WASM file
 }
 
 /*
 compileProject takes a string of Go code  and compiles it to WASM
 */
-func CompileWithOpts(code string, opts CompileOpts) ([]byte, error) {
+func compileWithOpts(code string, opts compileOpts) ([]byte, error) {
 
 	dir, deleteDir, err := createTempCodeDir(code)
 	if err != nil {
@@ -98,27 +98,5 @@ func CompileWithOpts(code string, opts CompileOpts) ([]byte, error) {
 	}
 
 	return bytes, nil
-
-}
-
-func StripWasm(
-	f *os.File,
-) error {
-	if f == nil {
-		return errors.New("nil file")
-	}
-
-	cmd := exec.Command("wasm-strip", f.Name())
-	stderr := bytes.Buffer{}
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		if stderr.Len() > 0 {
-			return errors.New(stderr.String())
-		}
-
-		return err
-	}
-
-	return nil
 
 }

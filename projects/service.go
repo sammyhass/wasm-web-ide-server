@@ -2,8 +2,8 @@ package projects
 
 import (
 	"bytes"
-	"os"
 	"strings"
+	"sync"
 
 	"github.com/sammyhass/web-ide/server/model"
 	"github.com/sammyhass/web-ide/server/wasm"
@@ -73,32 +73,45 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	compiled, err := wasm.CompileWithOpts(mainFile, wasm.CompileOpts{
-		BeforeDelete: func(f *os.File) error {
-			err := wasm.StripWasm(f)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	})
+	compiled, err := wasm.Compile(mainFile)
 	if err != nil {
 		return "", err
 	}
 
+	var wg sync.WaitGroup
+	var uploadErrs []error
+
+	wg.Add(2)
 	wasmReader := bytes.NewReader(compiled)
-	if err = s.repo.uploadProjectWasm(userId, projectId, wasmReader); err != nil {
-		return "", err
-	}
 
-	wat, err := wasm.WasmToWat(wasmReader)
-	if err != nil {
-		return "", err
-	}
+	go func() {
+		defer wg.Done()
 
-	watReader := strings.NewReader(wat)
-	if err = s.repo.uploadProjectWat(userId, projectId, watReader); err != nil {
-		return "", err
+		if err = s.repo.uploadProjectWasm(userId, projectId, wasmReader); err != nil {
+			uploadErrs = append(uploadErrs, err)
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		wat, err := wasm.WasmToWat(wasmReader)
+		if err != nil {
+			uploadErrs = append(uploadErrs, err)
+			return
+		}
+
+		watReader := strings.NewReader(wat)
+		if err = s.repo.uploadProjectWat(userId, projectId, watReader); err != nil {
+			uploadErrs = append(uploadErrs, err)
+			return
+		}
+	}()
+
+	wg.Wait()
+
+	if len(uploadErrs) > 0 {
+		return "", uploadErrs[0]
 	}
 
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)
