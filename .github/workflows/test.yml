@@ -20,6 +20,8 @@ jobs:
         run: sudo bash ./scripts/install-tinygo.sh
       - name: Install WABT
         run: sudo bash ./scripts/install-wabt.sh
+      - name: Install AssemblyScript
+        run: sudo bash ./scripts/install-asc.sh
       - name: Build
         run: go build -v ./...
 
