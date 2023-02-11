@@ -1,4 +1,4 @@
-package tinygo
+package wasm
 
 import (
 	"os"
@@ -111,7 +111,9 @@ func main() {
 
 func TestCompile_WorksWithValidGoFile(t *testing.T) {
 
-	bytes, err := Compile(src)
+	res, err := compileTinyGo(src, CompileOpts{
+		GenWat: true,
+	})
 
 	if err != nil {
 		t.Error(err)
@@ -121,13 +123,18 @@ func TestCompile_WorksWithValidGoFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(bytes) == 0 {
-		t.Error("Expected compiled wasm to be non-empty")
+	if len(res.Wasm) == 0 {
+		t.Error("Expected wasm to be non-empty")
 	}
+
+	if res.Wat == "" {
+		t.Error("Expected wat to be non-empty")
+	}
+
 }
 
 func TestCompile_ReturnsErrorWithInvalidGoFile(t *testing.T) {
-	_, err := Compile("package main")
+	_, err := compileTinyGo("package main", CompileOpts{})
 
 	if err == nil {
 		t.Error("Expected error, got nil")
@@ -135,7 +142,7 @@ func TestCompile_ReturnsErrorWithInvalidGoFile(t *testing.T) {
 }
 
 func TestCompile_BeforeDelete(t *testing.T) {
-	_, err := compileWithOpts(src, compileOpts{
+	_, err := compileTinyGo(src, CompileOpts{
 		BeforeDelete: func(f *os.File) error {
 			if _, err := os.Stat(f.Name()); err != nil {
 				t.Errorf("Expected file to exist, got %s", err)

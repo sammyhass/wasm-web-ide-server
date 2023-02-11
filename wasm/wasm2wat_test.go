@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"strings"
 	"testing"
-
-	"github.com/sammyhass/web-ide/server/wasm/tinygo"
 )
 
 func TestTinyGoWasm2Wat(t *testing.T) {
 
-	wasm, err := tinygo.Compile(`
+	wasm, err := compileTinyGo(`
 	package main
 
 	//export add
@@ -25,13 +23,17 @@ func TestTinyGoWasm2Wat(t *testing.T) {
 	}
 
 	func main() {}
-`)
+`, CompileOpts{
+		GenWat: false,
+	})
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	wat, err := WasmToWat(bytes.NewReader(wasm))
+	wat, err := WasmToWat(
+		bytes.NewReader(wasm.Wasm),
+	)
 
 	if err != nil {
 		t.Error(err)

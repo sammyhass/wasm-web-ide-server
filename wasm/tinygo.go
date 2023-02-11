@@ -1,4 +1,4 @@
-package tinygo
+package wasm
 
 import (
 	"bytes"
@@ -8,26 +8,17 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-
-	"github.com/sammyhass/web-ide/server/wasm/util"
 )
-
-func Compile(code string) ([]byte, error) {
-	return compileWithOpts(code, compileOpts{})
-}
-
-type compileOpts struct {
-	BeforeDelete func(wasm *os.File) error // BeforeDelete is called before the temp directory is deleted, it is passed the compiled WASM file
-}
 
 /*
 compileProject takes a string of Go code  and compiles it to WASM
 */
-func compileWithOpts(code string, opts compileOpts) ([]byte, error) {
+func compileTinyGo(code string, opts CompileOpts) (CompileResult, error) {
+	result := CompileResult{}
 
-	dir, deleteDir, err := util.CreateTempCodeDir("main.go", code)
+	dir, deleteDir, err := createTempCodeDir("main.go", code)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	defer deleteDir()
 
@@ -49,28 +40,38 @@ func compileWithOpts(code string, opts compileOpts) ([]byte, error) {
 				}
 			}
 
-			return nil, errors.New(strings.Join(errs, "\n"))
+			return result, errors.New(strings.Join(errs, "\n"))
 		}
 	}
 
 	f, err := os.Open(path.Join(dir, out))
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	defer f.Close()
 
 	if opts.BeforeDelete != nil {
 		if err := opts.BeforeDelete(f); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
-	bytes, err := io.ReadAll(f)
+	wasmBytes, err := io.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	return bytes, nil
+	result.Wasm = wasmBytes
+	if opts.GenWat {
+		wat, err := WasmToWat(bytes.NewReader(wasmBytes))
+		if err != nil {
+			return result, err
+		}
+
+		result.Wat = wat
+	}
+
+	return result, nil
 
 }

@@ -1,4 +1,4 @@
-package assemblyscript
+package wasm
 
 import (
 	"strings"
@@ -16,7 +16,9 @@ func TestCompile_ValidAssemblyScript(t *testing.T) {
 		}
 		`
 
-	res, err := Compile(src)
+	res, err := compileAssemblyScript(src, CompileOpts{
+		GenWat: true,
+	})
 
 	if err != nil {
 		t.Error(err)

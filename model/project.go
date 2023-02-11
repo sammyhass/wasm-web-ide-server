@@ -65,28 +65,19 @@ func (p *Project) ViewWith(
 	wasmPath string,
 	files ProjectFiles,
 ) ProjectView {
-	return ProjectView{
-		ID:        p.ID,
-		CreatedAt: p.CreatedAt,
-		Name:      p.Name,
-		UserID:    p.UserID,
-		WasmPath:  wasmPath,
-		Files:     ProjectFilesToFileViews(files),
-		Language:  p.Language.String(),
-	}
+	v := p.ViewWithFiles(files)
+	v.WasmPath = wasmPath
+
+	return v
 }
 
 func (p *Project) ViewWithFiles(
 	files ProjectFiles,
 ) ProjectView {
-	return ProjectView{
-		ID:        p.ID,
-		CreatedAt: p.CreatedAt,
-		Name:      p.Name,
-		UserID:    p.UserID,
-		Language:  p.Language.String(),
-		Files:     ProjectFilesToFileViews(files),
-	}
+	v := p.View()
+	v.Files = ProjectFilesToFileViews(files)
+
+	return v
 }
 
 func NewProject(

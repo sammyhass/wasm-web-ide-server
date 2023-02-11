@@ -8,9 +8,6 @@ import (
 
 	"github.com/sammyhass/web-ide/server/model"
 	"github.com/sammyhass/web-ide/server/wasm"
-	"github.com/sammyhass/web-ide/server/wasm/assemblyscript"
-	"github.com/sammyhass/web-ide/server/wasm/tinygo"
-	"github.com/sammyhass/web-ide/server/wasm/util"
 )
 
 type service struct {
@@ -88,15 +85,13 @@ func (s *service) compileProjectWASM(
 		return "", err
 	}
 
-	var res util.CompileResult
-	if lang := model.GetProjectLanguage(proj.Language); lang == model.LanguageAssemblyScript {
-		res, err = assemblyscript.Compile(mainFile)
-	} else if lang == model.LanguageGo {
-		res, err = s.compileProjectWasmWithGo(mainFile)
-	} else {
-		return "", errors.New("unsupported language")
-	}
-
+	res, err := wasm.Compile(
+		model.GetProjectLanguage(proj.Language),
+		mainFile,
+		wasm.CompileOpts{
+			GenWat: true,
+		},
+	)
 	if err != nil {
 		return "", err
 	}
@@ -136,26 +131,6 @@ func (s *service) compileProjectWASM(
 	}
 
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)
-}
-
-func (s *service) compileProjectWasmWithGo(
-	file string,
-) (util.CompileResult, error) {
-	var result util.CompileResult
-	compiled, err := tinygo.Compile(file)
-	if err != nil {
-		return result, err
-	}
-	result.Wasm = compiled
-
-	wat, err := wasm.WasmToWat(bytes.NewReader(compiled))
-	if err != nil {
-		return result, err
-	}
-
-	result.Wat = wat
-
-	return result, nil
 }
 
 func (s *service) updateProjectFiles(
