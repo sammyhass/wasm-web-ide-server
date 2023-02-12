@@ -34,6 +34,8 @@ func compileAssemblyScript(assemblyScriptCode string, options CompileOpts) (Comp
 		command = append(command, "--textFile", path.Base(watF.Name()))
 	}
 
+	command = append(command, "--importMemory")
+
 	stderr := bytes.NewBuffer(nil)
 	stdout := bytes.NewBuffer(nil)
 
