@@ -59,7 +59,7 @@ func compileAssemblyScript(assemblyScriptCode string, options CompileOpts) (Comp
 		}
 	}
 
-	if options.GenWat {
+	if options.GenWat && watF != nil {
 		watBytes, err := os.ReadFile(watF.Name())
 		if err != nil {
 			return CompileResult{}, err
