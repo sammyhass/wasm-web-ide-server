@@ -11,15 +11,13 @@ type Service struct {
 	userRepo *userRepository
 }
 
-func newService(
-	ur *userRepository,
-) *Service {
+func NewService() *Service {
 	return &Service{
-		userRepo: ur,
+		userRepo: newRepository(),
 	}
 }
 
-func (as *Service) generateJWTFomUser(u model.User) (string, error) {
+func (as *Service) GenerateJWTFomUser(u model.User) (string, error) {
 	return generateJWTFromUser(u.ID)
 }
 
@@ -28,7 +26,7 @@ var (
 	errUserAlreadyExists        = errors.New("email already in use")
 )
 
-func (as *Service) login(dto loginDto) (model.User, string, error) {
+func (as *Service) Login(dto loginDto) (model.User, string, error) {
 	found, err := as.userRepo.findByEmail(dto.Email)
 
 	if err != nil {
@@ -42,7 +40,7 @@ func (as *Service) login(dto loginDto) (model.User, string, error) {
 		return model.User{}, "", errIncorrectEmailOrPassword
 	}
 
-	token, err := as.generateJWTFomUser(found)
+	token, err := as.GenerateJWTFomUser(found)
 	if err != nil {
 		return model.User{}, "", err
 	}
@@ -73,7 +71,7 @@ func (as *Service) Register(registerDto loginDto) (model.User, string, error) {
 		return model.User{}, "", err
 	}
 
-	jwt, err := as.generateJWTFomUser(u)
+	jwt, err := as.GenerateJWTFomUser(u)
 
 	if err != nil {
 		return model.User{}, "", err

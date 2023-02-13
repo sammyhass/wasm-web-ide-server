@@ -10,9 +10,7 @@ type controller struct {
 
 func NewController() *controller {
 	return &controller{
-		svc: newService(
-			newRepository(),
-		),
+		svc: NewService(),
 	}
 }
 
@@ -35,7 +33,7 @@ func (ac *controller) login(c *gin.Context) {
 		return
 	}
 
-	user, jwt, err := ac.svc.login(dto)
+	user, jwt, err := ac.svc.Login(dto)
 
 	if err != nil {
 		c.Error(err)

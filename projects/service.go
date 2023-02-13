@@ -10,17 +10,17 @@ import (
 	"github.com/sammyhass/web-ide/server/wasm"
 )
 
-type service struct {
-	repo projectsRepo
+type Service struct {
+	repo *Repository
 }
 
-func newService() *service {
-	return &service{
-		repo: NewProjectsRepository(),
+func NewService() *Service {
+	return &Service{
+		repo: newRepository(),
 	}
 }
 
-func (s *service) createProject(
+func (s *Service) CreateProject(
 	name string,
 	userID string,
 	language model.ProjectLanguage,
@@ -38,15 +38,15 @@ func (s *service) createProject(
 	return proj.ViewWithFiles(files), nil
 }
 
-func (s *service) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
+func (s *Service) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	return s.repo.getProjectsByUserID(userID)
 }
 
-func (s *service) getProjectByID(userId, id string) (model.ProjectView, error) {
+func (s *Service) GetProjectByID(userId, id string) (model.ProjectView, error) {
 	return s.repo.getProjectByID(userId, id)
 }
 
-func (s *service) deleteProjectByID(userId, id string) error {
+func (s *Service) DeleteProjectByID(userId, id string) error {
 	err := s.repo.deleteProject(userId, id)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (s *service) deleteProjectByID(userId, id string) error {
 	return nil
 }
 
-func (s *service) compileProjectWASM(
+func (s *Service) CompileProjectWASM(
 	userId string,
 	projectId string,
 ) (string, error) {
@@ -133,7 +133,7 @@ func (s *service) compileProjectWASM(
 	return s.repo.genProjectWasmPresignedURL(userId, projectId)
 }
 
-func (s *service) updateProjectFiles(
+func (s *Service) UpdateProjectFiles(
 	userId string,
 	projectId string,
 	files model.ProjectFiles,
@@ -144,10 +144,10 @@ func (s *service) updateProjectFiles(
 	return s.repo.uploadProjectSrcFiles(userId, projectId, files)
 }
 
-func (s *service) genProjectWatPresignedURL(userId, projectId string) (string, error) {
+func (s *Service) GenProjectWatPresignedURL(userId, projectId string) (string, error) {
 	return s.repo.genProjectWatPresignedURL(userId, projectId)
 }
 
-func (s *service) renameProject(userId, id, name string) (model.ProjectView, error) {
+func (s *Service) RenameProject(userId, id, name string) (model.ProjectView, error) {
 	return s.repo.renameProject(userId, id, name)
 }

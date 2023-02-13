@@ -7,12 +7,12 @@ import (
 )
 
 type controller struct {
-	service *service
+	service *Service
 }
 
 func NewController() *controller {
 	return &controller{
-		service: newService(),
+		service: NewService(),
 	}
 }
 
@@ -49,7 +49,7 @@ func (c *controller) createProject(
 
 	lang := model.GetProjectLanguage(dto.Language)
 
-	proj, err := c.service.createProject(dto.Name, uuid, lang)
+	proj, err := c.service.CreateProject(dto.Name, uuid, lang)
 
 	if err != nil {
 		ctx.Error(err)
@@ -63,7 +63,7 @@ func (c *controller) getProjects(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	projects, err := c.service.getProjectsByUserID(uuid)
+	projects, err := c.service.GetProjectsByUserID(uuid)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -76,7 +76,7 @@ func (c *controller) getProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	project, err := c.service.getProjectByID(uuid, ctx.Param("id"))
+	project, err := c.service.GetProjectByID(uuid, ctx.Param("id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -89,7 +89,7 @@ func (c *controller) deleteProject(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	err := c.service.deleteProjectByID(uuid, ctx.Param("id"))
+	err := c.service.DeleteProjectByID(uuid, ctx.Param("id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -113,7 +113,7 @@ func (c *controller) updateProject(
 		return
 	}
 
-	_, err := c.service.updateProjectFiles(
+	_, err := c.service.UpdateProjectFiles(
 		uuid,
 		ctx.Param("id"),
 		dto.Files,
@@ -133,7 +133,7 @@ func (c *controller) compileProjectToWasm(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	path, err := c.service.compileProjectWASM(uuid, ctx.Param("id"))
+	path, err := c.service.CompileProjectWASM(uuid, ctx.Param("id"))
 
 	if err != nil {
 		ctx.Error(err)
@@ -147,7 +147,7 @@ func (c *controller) getProjectWat(
 	ctx *gin.Context,
 	uuid string,
 ) {
-	wat, err := c.service.genProjectWatPresignedURL(uuid, ctx.Param("id"))
+	wat, err := c.service.GenProjectWatPresignedURL(uuid, ctx.Param("id"))
 
 	if err != nil {
 		ctx.Error(err)
@@ -174,7 +174,7 @@ func (c *controller) renameProject(
 		return
 	}
 
-	if p, err := c.service.renameProject(uuid, id, dto.Name); err != nil {
+	if p, err := c.service.RenameProject(uuid, id, dto.Name); err != nil {
 		ctx.Error(err)
 		return
 	} else {

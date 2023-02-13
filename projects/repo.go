@@ -27,37 +27,13 @@ func getProjectWasmDir(userId string, id string) string {
 	return path.Join(getProjectDir(userId, id), "build")
 }
 
-type projectsRepo interface {
-	createProject(
-		name string,
-		userID string,
-		language model.ProjectLanguage,
-	) (model.Project, error)
-
-	createProjectFiles(project model.Project) (model.ProjectFiles, error)
-
-	getProjectsByUserID(userID string) ([]model.ProjectView, error)
-	getProjectByID(userId string, id string) (model.ProjectView, error)
-
-	renameProject(userId string, id string, name string) (model.ProjectView, error)
-	deleteProject(userId string, id string) error
-	deleteProjectFiles(userId string, id string) error
-
-	uploadProjectSrcFiles(userId string, id string, files model.ProjectFiles) (model.ProjectFiles, error)
-	uploadProjectWasm(userId string, id string, r io.Reader) error
-	uploadProjectWat(userId string, id string, r io.Reader) error
-
-	genProjectWasmPresignedURL(userId string, id string) (string, error)
-	genProjectWatPresignedURL(userId string, id string) (string, error)
-}
-
-type repository struct {
+type Repository struct {
 	db *gorm.DB
 	s3 *s3.Service
 }
 
-func NewProjectsRepository() *repository {
-	return &repository{
+func newRepository() *Repository {
+	return &Repository{
 		db: db.GetConnection(),
 		s3: s3.NewService(),
 	}
@@ -66,7 +42,7 @@ func NewProjectsRepository() *repository {
 /*
 createProject creates a new project in the database
 */
-func (r *repository) createProject(
+func (r *Repository) createProject(
 	name string,
 	userID string,
 	language model.ProjectLanguage,
@@ -88,7 +64,7 @@ func (r *repository) createProject(
 }
 
 // createProjectFiles creates the default files for a project in s3
-func (r *repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
+func (r *Repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
 	srcDir := getProjectSrcDir(project.UserID, project.ID)
 
 	var files model.ProjectFiles
@@ -113,7 +89,7 @@ func (r *repository) createProjectFiles(project model.Project) (model.ProjectFil
 /*
 getProjectsByUserID returns all projects for a given user (without files)
 */
-func (r *repository) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
+func (r *Repository) getProjectsByUserID(userID string) ([]model.ProjectView, error) {
 	var projects []*model.Project
 
 	err := r.db.Where("user_id = ?", userID).Find(&projects).Error
@@ -129,7 +105,7 @@ func (r *repository) getProjectsByUserID(userID string) ([]model.ProjectView, er
 	return out, nil
 }
 
-func (r *repository) getProjectRecord(
+func (r *Repository) getProjectRecord(
 	userId string,
 	id string,
 ) (model.Project, error) {
@@ -151,7 +127,7 @@ func (r *repository) getProjectRecord(
 /*
 getProjectByID returns a project for a given user with the given id returning the view of the database record and the files in s3
 */
-func (r *repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
+func (r *Repository) getProjectByID(userId string, id string) (model.ProjectView, error) {
 
 	project, err := r.getProjectRecord(userId, id)
 
@@ -175,7 +151,7 @@ func (r *repository) getProjectByID(userId string, id string) (model.ProjectView
 /*
 deleteProject deletes a project from the database
 */
-func (r *repository) deleteProject(userId string, id string) error {
+func (r *Repository) deleteProject(userId string, id string) error {
 
 	var project model.Project
 
@@ -200,7 +176,7 @@ func (r *repository) deleteProject(userId string, id string) error {
 /*
 deleteProjectFiles deletes a project stored in s3
 */
-func (r *repository) deleteProjectFiles(userId string, id string) error {
+func (r *Repository) deleteProjectFiles(userId string, id string) error {
 	dir := getProjectDir(userId, id)
 	s3Err := r.s3.DeleteDir(dir)
 	if s3Err != nil {
@@ -213,7 +189,7 @@ func (r *repository) deleteProjectFiles(userId string, id string) error {
 /*
 updateProjectFiles updates the files for a given project in s3
 */
-func (r *repository) uploadProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
+func (r *Repository) uploadProjectSrcFiles(userId string, id string, files model.ProjectFiles) (
 	model.ProjectFiles,
 	error,
 ) {
@@ -226,7 +202,7 @@ func (r *repository) uploadProjectSrcFiles(userId string, id string, files model
 	return files, nil
 }
 
-func (r *repository) uploadBuildFile(userId string, id string, name string, file io.Reader) error {
+func (r *Repository) uploadBuildFile(userId string, id string, name string, file io.Reader) error {
 	wasmDir := getProjectWasmDir(userId, id)
 	_, err := r.s3.Upload(wasmDir, name, file)
 	if err != nil {
@@ -236,11 +212,11 @@ func (r *repository) uploadBuildFile(userId string, id string, name string, file
 	return nil
 }
 
-func (r *repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
+func (r *Repository) uploadProjectWasm(userId string, id string, file io.Reader) error {
 	return r.uploadBuildFile(userId, id, "main.wasm", file)
 }
 
-func (r *repository) genProjectWasmPresignedURL(userId string, id string) (string, error) {
+func (r *Repository) genProjectWasmPresignedURL(userId string, id string) (string, error) {
 	wasmDir := getProjectWasmDir(userId, id)
 	url, err := r.s3.GenPresignedURL(path.Join(wasmDir, "main.wasm"), time.Hour*24*7)
 	if err != nil {
@@ -250,11 +226,11 @@ func (r *repository) genProjectWasmPresignedURL(userId string, id string) (strin
 	return url, nil
 }
 
-func (r *repository) uploadProjectWat(userId string, id string, file io.Reader) error {
+func (r *Repository) uploadProjectWat(userId string, id string, file io.Reader) error {
 	return r.uploadBuildFile(userId, id, "main.wat", file)
 }
 
-func (r *repository) genProjectWatPresignedURL(userId string, id string) (string, error) {
+func (r *Repository) genProjectWatPresignedURL(userId string, id string) (string, error) {
 	wasmDir := getProjectWasmDir(userId, id)
 	url, err := r.s3.GenPresignedURL(path.Join(wasmDir, "main.wat"), time.Hour*24*7)
 	if err != nil {
@@ -264,7 +240,7 @@ func (r *repository) genProjectWatPresignedURL(userId string, id string) (string
 	return url, nil
 }
 
-func (r *repository) renameProject(
+func (r *Repository) renameProject(
 	userId, id, name string,
 ) (model.ProjectView, error) {
 
