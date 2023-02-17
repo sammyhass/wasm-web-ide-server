@@ -2,6 +2,7 @@ package router
 
 import (
 	"log"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -78,10 +79,24 @@ func (r *router) useCORS() {
 
 	corsOrigin := env.GetOr(env.CORS_ALLOW_ORIGIN, "http://localho.st:3000")
 
+	isHttps := func(s string) bool {
+		return strings.HasPrefix(s, "https://")
+	}
+
 	r.Engine.Use(
 		cors.New(
 			cors.Config{
-				AllowOrigins:     []string{corsOrigin},
+				AllowOrigins: []string{corsOrigin},
+				AllowOriginFunc: func(origin string) bool {
+					if origin == corsOrigin || strings.HasPrefix(origin, "http://localhost") {
+						return true
+					}
+					if !isHttps(origin) {
+						return false
+					}
+
+					return false
+				},
 				AllowCredentials: true,
 				AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 				AllowHeaders:     allowedHeaders,
