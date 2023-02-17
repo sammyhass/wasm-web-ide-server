@@ -86,7 +86,6 @@ func (r *router) useCORS() {
 	r.Engine.Use(
 		cors.New(
 			cors.Config{
-				AllowOrigins: []string{corsOrigin},
 				AllowOriginFunc: func(origin string) bool {
 					if origin == corsOrigin || strings.HasPrefix(origin, "http://localhost") {
 						return true
