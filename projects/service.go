@@ -31,7 +31,7 @@ func (s *Service) CreateProject(
 		return model.ProjectView{}, err
 	}
 
-	files, err := s.repo.createProjectFiles(userId, userId, language)
+	files, err := s.repo.createProjectFiles(userId, proj.ID, language)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
@@ -168,7 +168,6 @@ func (s *Service) ForkProject(userId, sharecode string) (model.ProjectView, erro
 		userId,
 		model.GetProjectLanguage(sharedProject.Language),
 	)
-
 	if err != nil {
 		return model.ProjectView{}, err
 	}

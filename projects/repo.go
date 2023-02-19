@@ -1,7 +1,9 @@
 package projects
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"path"
 	"strings"
@@ -270,12 +272,17 @@ func (r *Repository) renameProject(
 
 func (r *Repository) allowSharing(p *model.Project) (sharecode string, err error) {
 	p.IsShared = true
-	p.ShareCode = generateShareCode()
-
+	p.ShareCode = sql.NullString{
+		String: generateShareCode(),
+		Valid:  true,
+	}
 	for {
 		if err := r.db.Save(p).Error; err != nil {
 			if strings.Contains(err.Error(), "duplicate") {
-				p.ShareCode = generateShareCode()
+				p.ShareCode = sql.NullString{
+					String: generateShareCode(),
+					Valid:  true,
+				}
 				continue
 			}
 			return "", err
@@ -283,7 +290,7 @@ func (r *Repository) allowSharing(p *model.Project) (sharecode string, err error
 		break
 	}
 
-	return p.ShareCode, nil
+	return p.ShareCode.String, nil
 }
 
 func (r *Repository) toggleSharing(userId, id string, share bool) (sharecode string, err error) {
@@ -319,12 +326,14 @@ func (r *Repository) disallowSharing(
 func (r *Repository) getProjectByShareCode(code string) (model.ProjectView, error) {
 	var p model.Project
 	if err := r.db.Where("share_code = ? AND is_shared = ?", code, true).First(&p).Error; err != nil {
-		return p.View(), err
+		fmt.Println("getProjectByShareCodeError", err)
+		return model.ProjectView{}, err
 	}
 
 	files, err := r.s3.GetFiles(getProjectSrcDir(p.UserID, p.ID))
 	if err != nil {
 		return p.View(), err
 	}
+
 	return p.ViewWithFiles(files), nil
 }

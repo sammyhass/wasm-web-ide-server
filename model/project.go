@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,7 +41,7 @@ type Project struct {
 	UserID    string          `gorm:"index"`
 	Language  ProjectLanguage `gorm:"default:0"`
 	IsShared  bool            `gorm:"default:false"`
-	ShareCode string          `gorm:"uniqueIndex"`
+	ShareCode sql.NullString  `gorm:"uniqueIndex"`
 }
 
 type ProjectView struct {
@@ -61,7 +62,7 @@ func (p *Project) View() ProjectView {
 		Name:      p.Name,
 		UserID:    p.UserID,
 		Language:  p.Language.String(),
-		ShareCode: p.ShareCode,
+		ShareCode: p.ShareCode.String,
 	}
 }
 
@@ -93,5 +94,9 @@ func NewProject(
 		Name:     name,
 		UserID:   userID,
 		Language: language,
+		ShareCode: sql.NullString{
+			String: "",
+			Valid:  false,
+		},
 	}
 }
