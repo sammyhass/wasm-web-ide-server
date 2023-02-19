@@ -39,6 +39,8 @@ type Project struct {
 	Name      string
 	UserID    string          `gorm:"index"`
 	Language  ProjectLanguage `gorm:"default:0"`
+	IsShared  bool            `gorm:"default:false"`
+	ShareCode string          `gorm:"uniqueIndex"`
 }
 
 type ProjectView struct {
@@ -49,6 +51,7 @@ type ProjectView struct {
 	Files     []FileView `json:"files"`
 	WasmPath  string     `json:"wasm_path"`
 	Language  string     `json:"language"`
+	ShareCode string     `json:"share_code"`
 }
 
 func (p *Project) View() ProjectView {
@@ -58,6 +61,7 @@ func (p *Project) View() ProjectView {
 		Name:      p.Name,
 		UserID:    p.UserID,
 		Language:  p.Language.String(),
+		ShareCode: p.ShareCode,
 	}
 }
 

@@ -3,6 +3,7 @@ package projects
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -22,15 +23,15 @@ func NewService() *Service {
 
 func (s *Service) CreateProject(
 	name string,
-	userID string,
+	userId string,
 	language model.ProjectLanguage,
 ) (model.ProjectView, error) {
-	proj, err := s.repo.createProject(name, userID, language)
+	proj, err := s.repo.createProject(name, userId, language)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
 
-	files, err := s.repo.createProjectFiles(proj)
+	files, err := s.repo.createProjectFiles(userId, userId, language)
 	if err != nil {
 		return model.ProjectView{}, err
 	}
@@ -38,8 +39,8 @@ func (s *Service) CreateProject(
 	return proj.ViewWithFiles(files), nil
 }
 
-func (s *Service) GetProjectsByUserID(userID string) ([]model.ProjectView, error) {
-	return s.repo.getProjectsByUserID(userID)
+func (s *Service) GetProjectsByUserID(userId string) ([]model.ProjectView, error) {
+	return s.repo.getProjectsByUserID(userId)
 }
 
 func (s *Service) GetProjectByID(userId, id string) (model.ProjectView, error) {
@@ -150,4 +151,40 @@ func (s *Service) GenProjectWatPresignedURL(userId, projectId string) (string, e
 
 func (s *Service) RenameProject(userId, id, name string) (model.ProjectView, error) {
 	return s.repo.renameProject(userId, id, name)
+}
+
+func (s *Service) ToggleForkable(userId, id string, share bool) (sharecode string, err error) {
+	return s.repo.toggleSharing(userId, id, share)
+}
+
+func (s *Service) ForkProject(userId, sharecode string) (model.ProjectView, error) {
+	sharedProject, err := s.repo.getProjectByShareCode(sharecode)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	newProj, err := s.repo.createProject(
+		fmt.Sprintf("%s (fork)", sharedProject.Name),
+		userId,
+		model.GetProjectLanguage(sharedProject.Language),
+	)
+
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	files, err := s.repo.createProjectFilesWith(
+		userId,
+		newProj.ID,
+		model.FileViewsToProjectFiles(sharedProject.Files),
+	)
+	if err != nil {
+		return model.ProjectView{}, err
+	}
+
+	return newProj.ViewWithFiles(files), nil
+}
+
+func (s *Service) GetSharedProject(sharecode string) (model.ProjectView, error) {
+	return s.repo.getProjectByShareCode(sharecode)
 }

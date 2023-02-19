@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/sammyhass/web-ide/server/db"
@@ -63,17 +64,9 @@ func (r *Repository) createProject(
 	return proj, nil
 }
 
-// createProjectFiles creates the default files for a project in s3
-func (r *Repository) createProjectFiles(project model.Project) (model.ProjectFiles, error) {
-	srcDir := getProjectSrcDir(project.UserID, project.ID)
-
-	var files model.ProjectFiles
-	switch project.Language {
-	case model.LanguageGo:
-		files = model.DefaultFilesGo
-	case model.LanguageAssemblyScript:
-		files = model.DefaultFilesAssemblyScript
-	}
+// createProjectFilesWith creates a project in the s3 bucket with the given files
+func (r *Repository) createProjectFilesWith(userId, projectId string, files model.ProjectFiles) (model.ProjectFiles, error) {
+	srcDir := getProjectSrcDir(userId, projectId)
 
 	if files == nil {
 		return nil, errors.New("invalid project language")
@@ -82,6 +75,23 @@ func (r *Repository) createProjectFiles(project model.Project) (model.ProjectFil
 	if err := r.s3.UploadFiles(srcDir, files); err != nil {
 		return nil, err
 	}
+
+	return files, nil
+}
+
+// createProjectFiles creates a project in the s3 bucket with the default files for the given language
+func (r *Repository) createProjectFiles(userId, projectId string, language model.ProjectLanguage) (model.ProjectFiles, error) {
+	var files model.ProjectFiles
+	switch language {
+	case model.LanguageGo:
+		files = model.DefaultFilesGo
+	case model.LanguageAssemblyScript:
+		files = model.DefaultFilesAssemblyScript
+	default:
+		return nil, errors.New("invalid project language")
+	}
+
+	r.createProjectFilesWith(userId, projectId, files)
 
 	return files, nil
 }
@@ -256,4 +266,65 @@ func (r *Repository) renameProject(
 	}
 
 	return p.View(), nil
+}
+
+func (r *Repository) allowSharing(p *model.Project) (sharecode string, err error) {
+	p.IsShared = true
+	p.ShareCode = generateShareCode()
+
+	for {
+		if err := r.db.Save(p).Error; err != nil {
+			if strings.Contains(err.Error(), "duplicate") {
+				p.ShareCode = generateShareCode()
+				continue
+			}
+			return "", err
+		}
+		break
+	}
+
+	return p.ShareCode, nil
+}
+
+func (r *Repository) toggleSharing(userId, id string, share bool) (sharecode string, err error) {
+	p, err := r.getProjectRecord(userId, id)
+	if err != nil {
+		return "", err
+	}
+
+	if share {
+		return r.allowSharing(&p)
+	}
+
+	return "", r.disallowSharing(&p)
+}
+
+func (r *Repository) disallowSharing(
+	p *model.Project,
+) error {
+
+	if err := r.db.Model(p).UpdateColumns(
+		map[string]interface{}{
+			"is_shared":  false,
+			"share_code": gorm.Expr("NULL"),
+		},
+	).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getProjectByShareCode returns the project with the given share code files included
+func (r *Repository) getProjectByShareCode(code string) (model.ProjectView, error) {
+	var p model.Project
+	if err := r.db.Where("share_code = ? AND is_shared = ?", code, true).First(&p).Error; err != nil {
+		return p.View(), err
+	}
+
+	files, err := r.s3.GetFiles(getProjectSrcDir(p.UserID, p.ID))
+	if err != nil {
+		return p.View(), err
+	}
+	return p.ViewWithFiles(files), nil
 }

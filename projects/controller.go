@@ -28,7 +28,10 @@ func (c *controller) Routes(
 	group.POST("/:id/compile", auth.Protected(c.compileProjectToWasm))
 	group.GET("/:id/wat", auth.Protected(c.getProjectWat))
 	group.PATCH("/:id/rename", auth.Protected(c.renameProject))
+	group.PATCH("/:id/share", auth.Protected(c.toggleShareProject))
 
+	group.POST("/fork/:code", auth.Protected(c.forkProject))
+	group.GET("/fork/:code", c.getSharedProject)
 }
 
 type newProjectDto struct {
@@ -180,5 +183,70 @@ func (c *controller) renameProject(
 	} else {
 		ctx.JSON(200, p)
 	}
+}
 
+// create a share code by which a project can be forked by another user
+// returns the share code if the project is now shareable, else returns false
+func (c *controller) toggleShareProject(
+	ctx *gin.Context,
+	uuid string,
+) {
+
+	id := ctx.Param("id")
+
+	var body struct {
+		Shared bool `json:"shared"`
+	} = struct {
+		Shared bool `json:"shared"`
+	}{}
+
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	shareCode, err := c.service.ToggleForkable(uuid, id, body.Shared)
+
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	res := make(map[string]interface{})
+	if shareCode == "" {
+		res["shared"] = false
+	} else {
+		res["shared"] = true
+		res["shareCode"] = shareCode
+	}
+
+	ctx.JSON(200, res)
+}
+
+func (c *controller) forkProject(
+	ctx *gin.Context,
+	uuid string,
+) {
+	shareCode := ctx.Param("code")
+
+	proj, err := c.service.ForkProject(uuid, shareCode)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(200, proj)
+}
+
+func (c *controller) getSharedProject(
+	ctx *gin.Context,
+) {
+	shareCode := ctx.Param("code")
+
+	project, err := c.service.GetSharedProject(shareCode)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(200, project)
 }

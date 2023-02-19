@@ -28,6 +28,14 @@ func ProjectFilesToFileViews(files ProjectFiles) []FileView {
 	return fileViews
 }
 
+func FileViewsToProjectFiles(fileViews []FileView) ProjectFiles {
+	var files ProjectFiles = make(ProjectFiles)
+	for _, fileView := range fileViews {
+		files[fileView.Name] = fileView.Content
+	}
+	return files
+}
+
 type FileView struct {
 	Name     string `json:"name"`
 	Content  string `json:"content"`
