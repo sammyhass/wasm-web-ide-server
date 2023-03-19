@@ -8,8 +8,6 @@ import (
 	"github.com/sammyhass/web-ide/server/model"
 )
 
-type CompileFunc func(code string, options CompileOpts) (CompileResult, error)
-
 type CompileOpts struct {
 	GenWat       bool                      // whether or not to generate a wat file along with the wasm file
 	BeforeDelete func(wasm *os.File) error // BeforeDelete is called before the temp directory is deleted, it is passed the compiled WASM file

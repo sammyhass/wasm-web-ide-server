@@ -3,6 +3,7 @@ package wasm
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -31,17 +32,15 @@ func compileTinyGo(code string, opts CompileOpts) (CompileResult, error) {
 	stderr := bytes.Buffer{}
 	cmd.Stderr = &stderr
 
+	fmt.Println("Compiling TinyGo code...")
+
 	errs := []string{}
 	if err := cmd.Run(); err != nil {
-		if err != nil {
-			for _, line := range strings.Split(stderr.String(), "\n") {
-				if strings.Contains(line, filename) {
-					errs = append(errs, line)
-				}
-			}
 
-			return result, errors.New(strings.Join(errs, "\n"))
-		}
+		errs = append(errs, strings.Split(stderr.String(), "\n")...)
+		fmt.Println(errs)
+
+		return result, errors.New(strings.Join(errs, "\n"))
 	}
 
 	f, err := os.Open(path.Join(dir, out))
