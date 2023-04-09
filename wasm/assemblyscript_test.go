@@ -41,3 +41,24 @@ func TestCompile_ValidAssemblyScript(t *testing.T) {
 	}
 
 }
+
+func TestCompile_InvalidAssemblyScript(t *testing.T) {
+	src := `
+		export function add(a: i32, b: i32): i32 {
+			return a + b;
+		}
+
+		export function sub(a: i32, b: i32): i32 {
+			return "hello";
+		}
+		`
+
+	_, err := compileAssemblyScript(src, CompileOpts{
+		GenWat: true,
+	})
+
+	if err == nil {
+		t.Error("Expected error, got nil")
+	}
+
+}
