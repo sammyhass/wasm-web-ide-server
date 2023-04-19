@@ -12,7 +12,7 @@ import (
 )
 
 /*
-compileProject takes a string of Go code  and compiles it to WASM
+compileTinyGo takes a string of Go code  and compiles it to WASM
 */
 func compileTinyGo(code string, opts CompileOpts) (CompileResult, error) {
 	result := CompileResult{}
