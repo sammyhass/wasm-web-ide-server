@@ -2,11 +2,12 @@
 
 This repository contains the source code for the Go API utilised by the 'Projects IDE' and is part of my submi
 
-##  Setup
+##  Local Development Setup
 
 You will need to have Go installed on your machine. You can download Go from [here](https://golang.org/dl/).
 
-###  Environement Variables
+###  Environment Variables
+<!-- add a label to this so that we can link to it from the docker section -->
 
 You will be required to provide the following environment variables in a `.env` file in the root of the project:
 
@@ -31,6 +32,16 @@ Prior to starting the server, you will need to perform a database migration so t
 go run main.go migrate
 ```
 
+###  Installing WebAssembly Related Dependencies
+
+The server makes use of the following tools to compile and run WebAssembly code:
+
+* [AssemblyScript](https://www.assemblyscript.org/)- A TypeScript-like language that compiles to WebAssembly
+* [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) - A toolkit for working with WebAssembly binaries and text formats
+* [TinyGo](https://tinygo.org/) - A Go compiler for WebAssembly
+
+You will need to ensure each of these are installed on your machine. Scripts for installing each of these dependencies are provided in the [scripts](scripts) directory. Run all of these scripts from the root of the project.
+
 ### Serving the API
 
 Once you have setup environment variables and performed the necessary migrations, you can run the API by running the following command:
@@ -40,6 +51,10 @@ go run main.go serve
 ```
 
 This will start the API on the port specified in the environment variables.
+
+## Docker
+
+The provided [Dockerfile](Dockerfile) can be used to build a Docker image for the API and is used to deploy the API in a production environment. Of course, you will need to provide the [required environment](#environment-variables) variables to the Docker container when running it.
 
 ##  Running Tests
 
