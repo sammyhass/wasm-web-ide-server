@@ -35,7 +35,7 @@ go run main.go migrate
 ###  Installing WebAssembly Related Dependencies
 
 The server makes use of the following tools as part of its WebAssembly compilation pipeline:
-* [AssemblyScript](https://www.assemblyscript.org/)- A TypeScript-like language that compiles to WebAssembly
+* [AssemblyScript](https://www.assemblyscript.org/) - A TypeScript-like language that compiles to WebAssembly
 * [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) - A toolkit for working with WebAssembly binaries and text formats
 * [TinyGo](https://tinygo.org/) - A Go compiler for WebAssembly
 
