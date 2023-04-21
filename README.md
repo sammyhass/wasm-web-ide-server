@@ -39,7 +39,7 @@ The server makes use of the following tools as part of its WebAssembly compilati
 * [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) - A toolkit for working with WebAssembly binaries and text formats
 * [TinyGo](https://tinygo.org/) - A Go compiler for WebAssembly
 
-You will need to ensure each of these are installed on your machine. Scripts for installing each of these dependencies are provided in the [scripts](scripts) directory. Run all of these scripts from the root of the project.
+You will need to ensure each of these are installed on your machine. Scripts for installing each of these dependencies are provided in the [scripts](scripts) directory. Run all of these scripts from the root of the project. Note that these scripts expect a Debian environment so for different environment it may be required to install these dependencies using other operating-system specific approaches.
 
 ### Serving the API
 
