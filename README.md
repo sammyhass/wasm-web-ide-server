@@ -7,9 +7,8 @@ This repository contains the source code for the Go API utilised by the 'Project
 You will need to have Go installed on your machine. You can download Go from [here](https://golang.org/dl/).
 
 ###  Environment Variables
-<!-- add a label to this so that we can link to it from the docker section -->
 
-You will be required to provide the following environment variables in a `.env` file in the root of the project:
+You will be required to provide the following environment variables, these can be provided in a `.env` file in the root of the project:
 
 * `PORT` - The port that the API will run on (defaults to 8080)
 * `POSTGRES_PORT` - The port that the Postgres database is running on
